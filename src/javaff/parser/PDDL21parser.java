@@ -7,9 +7,9 @@ import javaff.data.strips.*;
 import javaff.data.metric.*;
 import javaff.data.temporal.*;
 import javaff.data.adl.*;
-import javaff.data.DomainRequirements;
 
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
@@ -36,12 +36,29 @@ public class PDDL21parser implements PDDL21parserConstants {
                 UP = new  UngroundProblem();
         }
 
-    public static UngroundProblem parseFiles(File pDomainFile, File pProblemFile)
+    public static UngroundProblem parseFiles(File pDomainFile, File pProblemFile) {
+    try {
+        FileReader domainFileReader = new FileReader(pDomainFile);
+        FileReader problemFileReader = new FileReader(pProblemFile);
+        return parseFiles(domainFileReader, problemFileReader);
+    } catch (FileNotFoundException e) {
+        System.out.println("File not found: " + e.getMessage());
+        return null;
+    }
+}
+
+    public static UngroundProblem parseFiles(String domainString, String problemString) {
+    StringReader domainStringReader = new StringReader(domainString);
+    StringReader problemStringReader = new StringReader(problemString);
+    return parseFiles(domainStringReader, problemStringReader);
+}
+
+    public static UngroundProblem parseFiles(java.io.Reader domainReader, java.io.Reader problemReader)
     {
         reset();
                 boolean probsuc = false;
-                boolean suc = parseDomainFile(pDomainFile);
-                if (suc) probsuc = parseProblemFile(pProblemFile);
+                boolean suc = parseDomain(domainReader);
+                if (suc) probsuc = parseProblem(problemReader);
                 if (probsuc)
                 {
                         //ADL quantifiers (Exists and ForAll) need to have their quantified variables set up after the
@@ -56,21 +73,15 @@ public class PDDL21parser implements PDDL21parserConstants {
                 else return null;
     }
 
-    private static boolean parseDomainFile(File pFile)
+    private static boolean parseDomain(java.io.Reader reader)
     {
                 boolean req = false;
         try
         {
-            FileReader tFileReader = new FileReader(pFile);
-                        PDDL21parser parser = new PDDL21parser(tFileReader);
+                        PDDL21parser parser = new PDDL21parser(reader);
             req = parser.parseDomain();
-            tFileReader.close();
+            reader.close();
           }
-                catch (FileNotFoundException e)
-                {
-            System.out.println("File "+pFile+" has not been found");
-            req = false;
-                }
                 catch (IOException e)
                 {
             System.out.println("Unknown IOException caught");
@@ -79,30 +90,33 @@ public class PDDL21parser implements PDDL21parserConstants {
                 }
         catch (ParseException e)
         {
-            System.out.println("Error whilst parsing file "+pFile);
+            // System.out.println("Error whilst parsing file "+pFile);
+            System.out.println("Error whilst parsing file");
             System.out.println(e.getMessage());
             req = false;
         }
-        if (req) System.out.println("Parsed Domain file "+pFile+" successfully");
-                else System.out.println("Parsing of Domain file "+pFile+" failed");
+        // if (req) System.out.println("Parsed Domain file "+pFile+" successfully");
+        //         else System.out.println("Parsing of Domain file "+pFile+" failed");
+        //         return req;
+        if (req) System.out.println("Parsed Domain successfully");
+                else System.out.println("Parsing of Domain failed");
                 return req;
     }
 
-    private static boolean parseProblemFile(File pFile)
+    private static boolean parseProblem(java.io.Reader reader)
     {
                 boolean probsuc = true;
         try
         {
-            FileReader tFileReader = new FileReader(pFile);
-                        PDDL21parser parser = new PDDL21parser(tFileReader);
+                        PDDL21parser parser = new PDDL21parser(reader);
             parser.parseProblem();
-            tFileReader.close();
+            reader.close();
                 }
-                catch (FileNotFoundException e)
-                {
-            System.out.println("File "+pFile+" has not been found");
-            probsuc = false;
-                }
+            //     catch (FileNotFoundException e)
+            //     {
+            // System.out.println("File "+pFile+" has not been found");
+            // probsuc = false;
+            //     }
                 catch (IOException e)
                 {
             System.out.println("Unknown IOException caught");
@@ -111,12 +125,16 @@ public class PDDL21parser implements PDDL21parserConstants {
                 }
         catch (ParseException e)
         {
-            System.out.println("Error whilst parsing file "+pFile);
+            // System.out.println("Error whilst parsing file "+pFile);
+            System.out.println("Error whilst parsing file");
             System.out.println(e.getMessage());
             probsuc = false;
         }
-        if (probsuc) System.out.println("Parsed Problem file "+pFile+" successfully");
-                else System.out.println("Parsing Problem file "+pFile+" failed");
+        // if (probsuc) System.out.println("Parsed Problem file "+pFile+" successfully");
+        //         else System.out.println("Parsing Problem file "+pFile+" failed");
+        //         return probsuc;
+        if (probsuc) System.out.println("Parsed Problem successfully");
+                else System.out.println("Parsing Problem failed");
                 return probsuc;
     }
 

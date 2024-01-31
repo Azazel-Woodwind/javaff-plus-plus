@@ -117,9 +117,13 @@ public class JavaFF
 	public static PrintStream infoOutput = System.out;
 	public static PrintStream errorOutput = System.err;
 
-	protected File domainFile;
+	public double timeTaken;
+
+	protected File domainFile, problemFile;
 
 	protected File useOutputFile;
+
+	protected String domainStr, problemStr;
 	
 	protected boolean useEHC, useBFS;
 	
@@ -138,7 +142,7 @@ public class JavaFF
 	 */
 	public JavaFF(String domain)
 	{
-		this(domain, null);
+		this(domain, (File) null);
 	}
 
 	/**
@@ -174,6 +178,23 @@ public class JavaFF
 		
 		this.domainFile = domain;
 		this.useOutputFile = solutionFile;
+	}
+
+	public JavaFF(File domain, File problemFile, File solutionFile)
+	{
+		this();
+		
+		this.domainFile = domain;
+		this.problemFile = problemFile;
+		this.useOutputFile = solutionFile;
+	}
+
+	public JavaFF(String domainStr, String problemStr)
+	{
+		this();
+		
+		this.domainStr = domainStr;
+		this.problemStr = problemStr;
 	}
 
 	/**
@@ -238,8 +259,8 @@ public class JavaFF
 
 			try
 			{
-				JavaFF planner = new JavaFF(domainFile, solutionFile);
-				Plan p = planner.plan(problemFile);
+				JavaFF planner = new JavaFF(domainFile, problemFile, solutionFile);
+				Plan p = planner.plan();
 			}
 			catch (UnreachableGoalException e)
 			{
@@ -283,7 +304,8 @@ public class JavaFF
 				postfix = postfix + ".pddl";
 
 			File pfile = new File(path + "/" + filenamePrefix + postfix);
-			plans.add(this.plan(pfile));
+			this.problemFile = pfile;
+			plans.add(this.plan());
 		}
 
 		return plans;
@@ -313,10 +335,10 @@ public class JavaFF
 	 *            The file to parse.
 	 * @return A totally ordered plan.
 	 */
-	public Plan plan(File pFile) throws UnreachableGoalException,
+	public Plan plan() throws UnreachableGoalException,
 			ParseException
 	{
-		Plan plan = this.doFilePlan(pFile);
+		Plan plan = this.doFilePlan();
 
 		if (plan != null)
 		{
@@ -467,7 +489,9 @@ public class JavaFF
 
 			infoOutput.println("EHC Plan Time = " + planningEHCTime + "sec");
 			infoOutput.println("BFS Plan Time = " + planningBFSTime + "sec");
-			infoOutput.println("Scheduling Time = " + schedulingTime + "sec");
+			infoOutput.println("Total Plan time = " + (planningEHCTime + planningBFSTime) + "sec");
+			this.timeTaken = planningEHCTime + planningBFSTime;
+			// infoOutput.println("Scheduling Time = " + schedulingTime + "sec");
 		}
 		else
 		{
@@ -610,14 +634,20 @@ public class JavaFF
 		}
 	}
 
-	protected Plan doFilePlan(File pFile) throws UnreachableGoalException,
+	protected Plan doFilePlan() throws UnreachableGoalException,
 			ParseException
 	{
 		// ********************************
 		// Parse and Ground the Problem
 		// ********************************
-		UngroundProblem unground = PDDL21parser.parseFiles(this.domainFile,
-				pFile);
+		UngroundProblem unground;
+		if (this.domainFile != null && this.problemFile != null) {
+			unground = PDDL21parser.parseFiles(this.domainFile, this.problemFile);
+		}
+		else {
+			unground = PDDL21parser.parseFiles(this.domainStr, this.problemStr);
+		}
+		
 
 		if (unground == null)
 		{
