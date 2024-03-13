@@ -110,7 +110,7 @@ public class Benchmarker {
                 Domain domain = new Domain(domainName, domainUrl);
 
                 System.out.println("Solving problems in domain " + domainId + "...");
-                for (int j = 0; j < 10; j++) {
+                for (int j = 0; j < 5; j++) {
                     JSONObject problem = problems.getJSONObject(j);
                     String problemUrl = problem.getString("problem_url");
                     String problemName = problem.getString("problem");
