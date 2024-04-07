@@ -383,7 +383,7 @@ public class EnforcedHillClimbingSearch extends Search {
     }
 
     public State search() {
-        if (true) { // programmatically switch between sequential/parallel
+        if (false) { // programmatically switch between sequential/parallel
             if (start.goalReached()) { // wishful thinking
                 return start;
             }

@@ -28,86 +28,85 @@
 package javaff.search;
 
 import javaff.planning.State;
+import javaff.data.Action;
 import javaff.planning.Filter;
 import java.util.Comparator;
 import java.util.TreeSet;
+
+import benchmarker.Benchmarker;
+
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Set;
 
-public class BestFirstSearch extends Search
-{
+public class BestFirstSearch extends Search {
 
-	protected Hashtable closed;
-	protected TreeSet open;
+    protected Hashtable closed;
+    protected TreeSet open;
 
-	public BestFirstSearch(State s)
-	{
-		this(s, new HValueComparator());
-	}
+    public BestFirstSearch(State s) {
+        this(s, new HValueComparator());
+    }
 
-	public BestFirstSearch(State s, Comparator c)
-	{
-		super(s);
-		setComparator(c);
+    public BestFirstSearch(State s, Comparator c) {
+        super(s);
+        setComparator(c);
 
-		closed = new Hashtable();
-		open = new TreeSet(comp);
-	}
+        closed = new Hashtable();
+        open = new TreeSet(comp);
+    }
 
-	public void updateOpen(State S)
-	{
-		open.addAll(S.getNextStates(filter.getActions(S)));
-	}
+    public void updateOpen(State S) {
+        List<Action> actions = filter.getActions(S);
+        Benchmarker.addToActionCount(actions.size());
+        Set<State> neighbours = S.getNextStates(actions);
+        Benchmarker.addToNeighbourCount(neighbours.size());
+        open.addAll(neighbours);
+    }
 
-	public State removeNext()
-	{
-		State S = (State) (open).first();
-		open.remove(S);
-		/*
-		 * System.out.println("================================");
-		 * S.getSolution().print(System.out); System.out.println("----Helpful
-		 * Actions-------------"); javaff.planning.TemporalMetricState ms =
-		 * (javaff.planning.TemporalMetricState) S;
-		 * System.out.println(ms.helpfulActions);
-		 * System.out.println("----Relaxed Plan----------------");
-		 * ms.RelaxedPlan.print(System.out);
-		 */
-		return S;
-	}
+    public State removeNext() {
+        State S = (State) (open).first();
+        open.remove(S);
+        /*
+         * System.out.println("================================");
+         * S.getSolution().print(System.out); System.out.println("----Helpful
+         * Actions-------------"); javaff.planning.TemporalMetricState ms =
+         * (javaff.planning.TemporalMetricState) S;
+         * System.out.println(ms.helpfulActions);
+         * System.out.println("----Relaxed Plan----------------");
+         * ms.RelaxedPlan.print(System.out);
+         */
+        return S;
+    }
 
-	public boolean needToVisit(State s)
-	{
-		Integer Shash = new Integer(s.hashCode());
-		State D = (State) closed.get(Shash);
+    public boolean needToVisit(State s) {
+        Integer Shash = new Integer(s.hashCode());
+        State D = (State) closed.get(Shash);
 
-		if (closed.containsKey(Shash) && D.equals(s))
-			return false;
+        if (closed.containsKey(Shash) && D.equals(s))
+            return false;
 
-		closed.put(Shash, s);
-		return true;
-	}
+        closed.put(Shash, s);
+        return true;
+    }
 
-	public State search()
-	{
+    public State search() {
 
-		open.add(start);
+        open.add(start);
 
-		while (!open.isEmpty())
-		{
-			State s = removeNext();
-			if (needToVisit(s))
-			{
-				++nodeCount;
-				if (s.goalReached())
-				{
-					return s;
-				} else
-				{
-					updateOpen(s);
-				}
-			}
+        while (!open.isEmpty()) {
+            State s = removeNext();
+            if (needToVisit(s)) {
+                ++nodeCount;
+                if (s.goalReached()) {
+                    return s;
+                } else {
+                    updateOpen(s);
+                }
+            }
 
-		}
-		return null;
-	}
+        }
+        return null;
+    }
 
 }

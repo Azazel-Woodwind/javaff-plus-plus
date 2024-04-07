@@ -20,10 +20,23 @@ public class Benchmarker {
     public static final int benchmarkSetId = 11;
     public static int layerSizeSum = 0;
     public static int neighbourSizeSum = 0;
+    public static int actionsSum = 0;
     private static int numLayers = 0;
     private static int numNodes = 0;
     private static int maxLayerSize = Integer.MIN_VALUE;
+    private static int minLayerSize = Integer.MAX_VALUE;
     private static int maxNeighbourSize = Integer.MIN_VALUE;
+    private static int minNeighourSize = Integer.MAX_VALUE;
+    private static int maxActions = Integer.MIN_VALUE;
+    private static int minActions = Integer.MAX_VALUE;
+
+    private static int localNumNodes = 0;
+    private static int localNeighbourSizeSum = 0;
+    private static int localActionsSum = 0;
+    private static int localMaxNeighbourSize = Integer.MIN_VALUE;
+    private static int localMinNeighbourSize = Integer.MAX_VALUE;
+    private static int localMaxActions = Integer.MIN_VALUE;
+    private static int localMinActions = Integer.MAX_VALUE;
 
     public static void addToLayerCount(int count) {
         Benchmarker.layerSizeSum += count;
@@ -32,11 +45,47 @@ public class Benchmarker {
         Benchmarker.numLayers++;
     }
 
+    private static void resetLocals() {
+        Benchmarker.localNumNodes = 0;
+        Benchmarker.localNeighbourSizeSum = 0;
+        Benchmarker.localActionsSum = 0;
+        Benchmarker.localMaxNeighbourSize = Integer.MIN_VALUE;
+        Benchmarker.localMinNeighbourSize = Integer.MAX_VALUE;
+        Benchmarker.localMaxActions = Integer.MIN_VALUE;
+        Benchmarker.localMinActions = Integer.MAX_VALUE;
+    }
+
     public static void addToNeighbourCount(int count) {
         Benchmarker.neighbourSizeSum += count;
+        Benchmarker.localNeighbourSizeSum += count;
+
         Benchmarker.maxNeighbourSize = Math.max(Benchmarker.maxNeighbourSize, count);
+        Benchmarker.localMaxNeighbourSize = Math.max(Benchmarker.localMaxNeighbourSize, count);
+
+        Benchmarker.minNeighourSize = Math.min(Benchmarker.minNeighourSize, count);
+        Benchmarker.localMinNeighbourSize = Math.min(Benchmarker.localMinNeighbourSize, count);
 
         Benchmarker.numNodes++;
+        Benchmarker.localNumNodes++;
+    }
+
+    public static void addToActionCount(int count) {
+        Benchmarker.actionsSum += count;
+        Benchmarker.localActionsSum += count;
+
+        Benchmarker.maxActions = Math.max(Benchmarker.maxActions, count);
+        Benchmarker.localMaxActions = Math.max(Benchmarker.localMaxActions, count);
+
+        Benchmarker.minActions = Math.min(Benchmarker.minActions, count);
+        Benchmarker.localMinActions = Math.min(Benchmarker.localMinActions, count);
+    }
+
+    private static double getAverageActions() {
+        return (double) Benchmarker.actionsSum / Benchmarker.numNodes;
+    }
+
+    private static double getAverageLocalActions() {
+        return (double) Benchmarker.localActionsSum / Benchmarker.localNumNodes;
     }
 
     private static double getAverageLayerSize() {
@@ -45,6 +94,10 @@ public class Benchmarker {
 
     private static double getAverageNeighbourSize() {
         return (double) Benchmarker.neighbourSizeSum / Benchmarker.numNodes;
+    }
+
+    private static double getAverageLocalNeighbourSize() {
+        return (double) Benchmarker.localNeighbourSizeSum / Benchmarker.localNumNodes;
     }
 
     public static void main(String[] args) {
@@ -73,9 +126,9 @@ public class Benchmarker {
             ArrayList<Domain> domainList = new ArrayList<Domain>();
 
             int problemsSolved = 0;
-            long startTime, endTime, totalTime = 0;
+            double startTime, endTime, totalTime = 0;
             System.out.println("Found " + domains.length() + " domains in the FF benchmark set.");
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 1; i++) {
                 String domainId = domainSet.get(i);
                 HashSet<String> badDomains = new HashSet<String>(Arrays.asList("15", "29"));
                 if (badDomains.contains(domainId)) {
@@ -110,7 +163,7 @@ public class Benchmarker {
                 Domain domain = new Domain(domainName, domainUrl);
 
                 System.out.println("Solving problems in domain " + domainId + "...");
-                for (int j = 0; j < 5; j++) {
+                for (int j = 0; j < 1; j++) {
                     JSONObject problem = problems.getJSONObject(j);
                     String problemUrl = problem.getString("problem_url");
                     String problemName = problem.getString("problem");
@@ -133,13 +186,14 @@ public class Benchmarker {
 
                     Plan plan = null;
 
+                    startTime = System.nanoTime();
                     try {
-                        startTime = System.nanoTime();
                         plan = ff.plan();
+                    } catch (Exception e) {
                         endTime = System.nanoTime();
-                    } catch (Throwable e) {
+                        totalTime += (endTime - startTime) / 1e9;
                         System.out.println("An error occured while solving problem " + problemName + ":");
-                        System.out.println(e.getMessage());
+                        e.printStackTrace();
                         continue;
                     }
 
@@ -149,15 +203,31 @@ public class Benchmarker {
                     System.out.println("Took " + p.timeTaken + " seconds.");
                     System.out.println("Plan cost: " + cost);
                     totalTime += p.timeTaken;
+                    System.out.println("Max neighbour size: " + Benchmarker.localMaxNeighbourSize);
+                    System.out.println("Min neighbour size: " + Benchmarker.localMinNeighbourSize);
+                    System.out.println("Average neighbour size: " + getAverageLocalNeighbourSize());
+                    System.out.println("Max actions: " + Benchmarker.localMaxActions);
+                    System.out.println("Min actions: " + Benchmarker.localMinActions);
+                    System.out.println("Average actions: " + getAverageLocalActions());
 
                     domain.addProblem(p);
                     problemsSolved++;
+                    resetLocals();
+
+                    // Get the Java runtime
+                    // Runtime runtime = Runtime.getRuntime();
+                    // // Run the garbage collector
+                    // runtime.gc();
+                    // // Calculate memory usage
+                    // long memory = runtime.totalMemory() - runtime.freeMemory();
+                    // System.out.println("Used memory is bytes: " + memory);
                 }
 
                 domainList.add(domain);
             }
 
-            System.out.println("Solved " + problemsSolved + " problems in " + totalTime + " seconds.");
+            System.out.println("Solved " + problemsSolved + "");
+            System.out.println("Total time: " + totalTime + " seconds.");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -165,7 +235,19 @@ public class Benchmarker {
         System.out.println("Max layer size: " + Benchmarker.maxLayerSize);
         System.out.println("Average layer size: " + getAverageLayerSize());
         System.out.println("Max neighbour size: " + Benchmarker.maxNeighbourSize);
+        System.out.println("Min neighbour size: " + Benchmarker.minNeighourSize);
         System.out.println("Average neighbour size: " + getAverageNeighbourSize());
+        System.out.println("Max actions: " + Benchmarker.maxActions);
+        System.out.println("Min actions: " + Benchmarker.minActions);
+        System.out.println("Average actions: " + getAverageActions());
+
+        // Get the Java runtime
+        // Runtime runtime = Runtime.getRuntime();
+        // // Run the garbage collector
+        // runtime.gc();
+        // // Calculate memory usage
+        // long memory = runtime.totalMemory() - runtime.freeMemory();
+        // System.out.println("Total used memory is bytes: " + memory);
 
         // System.out.println(response.body());
 

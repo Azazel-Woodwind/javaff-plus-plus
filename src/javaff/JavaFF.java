@@ -71,6 +71,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * An implementation of the FF planner in Java. The planner currently only
@@ -127,6 +129,9 @@ public class JavaFF {
     public static PrintStream infoOutput = System.out;
     public static PrintStream errorOutput = System.err;
 
+    public static final ExecutorService executorService = Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
     public double timeTaken;
 
     protected File domainFile, problemFile;
@@ -140,9 +145,10 @@ public class JavaFF {
     protected JavaFF() {
         this.domainFile = null;
         this.useOutputFile = null;
-        // this.useEHC = true;
-        this.useEHC = false;
-        this.useBFS = true;
+        this.useEHC = true;
+        // this.useEHC = false;
+        // this.useBFS = true;
+        this.useBFS = false;
     }
 
     /**
@@ -270,6 +276,8 @@ public class JavaFF {
                         + " is unreachable");
             } catch (ParseException e) {
                 System.out.println(e.getMessage());
+            } finally {
+                JavaFF.executorService.shutdown();
             }
         }
     }
@@ -390,7 +398,8 @@ public class JavaFF {
 
     protected TotalOrderPlan performPlanning(GroundProblem ground,
             State initialState) throws UnreachableGoalException {
-        long startTime = System.nanoTime();
+
+        double startTime, endTime;
         long afterBFSPlanning = 0, afterEHCPlanning = 0;
 
         State originalInitState = (State) initialState.clone();
@@ -404,9 +413,10 @@ public class JavaFF {
         double planningBFSTime = 0;
         if (this.isUseEHC()) {
             System.out.println("Running FF with EHC...");
+            startTime = System.nanoTime();
             goalState = this.performFFSearch(initialState, true);
-            afterEHCPlanning = System.nanoTime();
-            planningEHCTime = (afterEHCPlanning - startTime) / JavaFF.Nanos;
+            endTime = System.nanoTime();
+            planningEHCTime = (endTime - startTime) / JavaFF.Nanos;
         }
 
         if (goalState != null) {
@@ -415,9 +425,10 @@ public class JavaFF {
         } else if (this.isUseBFS()) {
             initialState = (State) originalInitState.clone();
             System.out.println("Running FF with BFS...");
+            startTime = System.nanoTime();
             goalState = this.performFFSearch(initialState, false);
-            afterBFSPlanning = System.nanoTime();
-            planningBFSTime = (afterBFSPlanning - afterEHCPlanning) / JavaFF.Nanos;
+            endTime = System.nanoTime();
+            planningBFSTime = (endTime - startTime) / JavaFF.Nanos;
 
             if (goalState != null) {
                 plan = (TotalOrderPlan) goalState.getSolution();
@@ -854,7 +865,7 @@ public class JavaFF {
             infoOutput.println("Performing search using BFS");
             // create a Best-First Searcher
             BestFirstSearch BFS = new BestFirstSearch(initialState);
-            // BestFirstSearch BFS = new ParallelBestFirstSearch(initialState);
+            // ParallelBestFirstSearch BFS = new ParallelBestFirstSearch(initialState);
             BFS.setFilter(NullFilter.getInstance());
             goalState = BFS.search();
 

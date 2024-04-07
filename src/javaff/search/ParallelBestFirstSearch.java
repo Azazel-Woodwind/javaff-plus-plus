@@ -1,18 +1,25 @@
 package javaff.search;
 
 import javaff.planning.State;
+import javaff.JavaFF;
+import javaff.data.Action;
 import javaff.planning.Filter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.TreeSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -20,11 +27,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ParallelBestFirstSearch extends Search {
 
     protected Hashtable closed;
-    protected TreeSet open;
+    protected SortedSet<State> open;
     private final ReentrantLock lock = new ReentrantLock();
 
-    private static final ExecutorService executorService = Executors
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private static final AtomicBoolean correctResultFound = new AtomicBoolean(false);
 
     public ParallelBestFirstSearch(State s) {
@@ -36,14 +41,56 @@ public class ParallelBestFirstSearch extends Search {
         setComparator(c);
 
         closed = new Hashtable();
-        open = new TreeSet(comp);
+        open = Collections.synchronizedSortedSet(new TreeSet(comp));
+    }
+
+    public class ExpandTask extends RecursiveAction {
+        private final List<Action> list;
+        private final int start;
+        private final int end;
+        private final javaff.planning.State curr;
+        private static final int THRESHOLD = 6;
+
+        public ExpandTask(List<Action> list, int start, int end, javaff.planning.State curr) {
+            this.list = list;
+            this.start = start;
+            this.end = end;
+            this.curr = curr;
+        }
+
+        @Override
+        protected void compute() {
+            if ((end - start) <= THRESHOLD) {
+                // Process the segment of the list directly
+                for (int i = start; i < end; i++) {
+                    Action a = list.get(i);
+                    javaff.planning.State succ = curr.getNextState(a);
+                    // succ.getHValue();
+                    open.add(succ);
+                    // Process item
+                }
+            } else {
+                // Split the list and invoke new tasks
+                int mid = start + (end - start) / 2;
+                invokeAll(new ExpandTask(list, start, mid, curr),
+                        new ExpandTask(list, mid, end, curr));
+            }
+        }
     }
 
     public void updateOpen(State S) {
-        open.addAll(S.getNextStates(filter.getActions(S)));
+        List<Action> applicable = filter.getActions(S);
+        try (ForkJoinPool pool = new ForkJoinPool()) {
+            // System.out.println(applicable.size());
+            pool.invoke(new ExpandTask(applicable, 0, applicable.size(), S));
+        }
+        // open.addAll(S.getNextStates(filter.getActions(S)));
     }
 
     public State removeNext() {
+        if (open.isEmpty())
+            return null;
+
         State S = (State) (open).first();
         open.remove(S);
         /*
@@ -70,6 +117,7 @@ public class ParallelBestFirstSearch extends Search {
     }
 
     private State findGoal() throws InterruptedException, ExecutionException {
+        correctResultFound.set(false);
         List<Callable<State>> tasks = new ArrayList<>();
         for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
             tasks.add(() -> {
@@ -86,7 +134,8 @@ public class ParallelBestFirstSearch extends Search {
 
                 // }
                 while (!correctResultFound.get()) {
-                    if (Math.random() < 0.5) {
+                    System.out.println(open.size());
+                    if (true) {
                         State s;
                         lock.lock();
                         try {
@@ -95,21 +144,39 @@ public class ParallelBestFirstSearch extends Search {
                             lock.unlock();
                         }
 
-                        for (State neighbour : start.getNextStates(filter.getActions(s))) {
-                            if (neighbour.goalReached()) {
-                                return neighbour;
-                            }
-
-                            lock.lock();
-                            try {
-                                if (needToVisit(s)) {
-                                    ++nodeCount;
-                                    updateOpen(s);
-                                }
-                            } finally {
-                                lock.unlock();
-                            }
+                        if (s == null || !needToVisit(s)) {
+                            continue;
                         }
+
+                        if (s.goalReached()) {
+                            correctResultFound.set(true);
+                            System.out.println("FOUND GOAL");
+                            return s;
+                        }
+
+                        lock.lock();
+                        try {
+                            updateOpen(s);
+                        } finally {
+                            lock.unlock();
+                        }
+
+                        // for (State neighbour : s.getNextStates(filter.getActions(s))) {
+                        // if (neighbour.goalReached()) {
+                        // correctResultFound.set(true);
+                        // System.out.println("FOUND GOAL");
+                        // return neighbour;
+                        // }
+
+                        // lock.lock();
+                        // try {
+                        // if (needToVisit(neighbour)) {
+                        // open.add(neighbour);
+                        // }
+                        // } finally {
+                        // lock.unlock();
+                        // }
+                        // }
                     } else {
                         State t = null;
                         lock.lock();
@@ -117,7 +184,7 @@ public class ParallelBestFirstSearch extends Search {
                         try {
                             int desiredIndex = (int) Math.ceil(open.size() * 0.3) - 1;
                             int currentIndex = 0;
-                            for (State element : (TreeSet<State>) open) {
+                            for (State element : open) {
                                 if (currentIndex == desiredIndex) {
                                     t = element;
                                     needToVisit(t);
@@ -129,15 +196,17 @@ public class ParallelBestFirstSearch extends Search {
                             lock.unlock();
                         }
 
-                        TreeSet<State> localOpen = new TreeSet<>(comp);
+                        SortedSet<State> localOpen = Collections.synchronizedSortedSet(new TreeSet(comp));
                         localOpen.add(t);
-                        for (int j = 0; j < 20; j++) {
+                        for (int j = 0; !open.isEmpty() && !localOpen.isEmpty() && j < 20; j++) {
                             State s = localOpen.first();
                             localOpen.remove(s);
                             open.remove(s);
 
                             for (State neighbour : s.getNextStates(filter.getActions(s))) {
                                 if (neighbour.goalReached()) {
+                                    correctResultFound.set(true);
+                                    System.out.println("FOUND GOAL");
                                     return neighbour;
                                 }
                                 lock.lock();
@@ -171,36 +240,48 @@ public class ParallelBestFirstSearch extends Search {
         // The invokeAny method returns the result of the first successfully completed
         // task and cancels all others
         try {
-            return executorService.invokeAny(tasks);
+            return JavaFF.executorService.invokeAny(tasks);
         } finally {
             // Ensure all tasks are cancelled after finding the correct result
             correctResultFound.set(true);
-            executorService.shutdownNow(); // Attempt to stop all actively executing tasks
+            // JavaFF.executorService.shutdownNow(); // Attempt to stop all actively
+            // executing tasks
         }
     }
 
     public State search() {
-        if (start.goalReached())
-            return start; // wishful thinking v2
 
-        for (State neighbour : start.getNextStates(filter.getActions(start))) {
-            if (neighbour.goalReached()) {
-                return neighbour; // more wishful thinking
+        open.add(start);
+
+        while (!open.isEmpty()) {
+            State s = removeNext();
+            if (needToVisit(s)) {
+                ++nodeCount;
+                if (s.goalReached()) {
+                    return s;
+                } else {
+                    updateOpen(s);
+                }
             }
 
-            open.add(neighbour);
         }
 
-        try {
-            // Submit tasks and wait for one to complete with the correct result
-            return findGoal();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            // Shutdown the executor service
-            executorService.shutdownNow();
-        }
+        return null;
+        // for (State neighbour : start.getNextStates(filter.getActions(start))) {
+        // if (neighbour.goalReached()) {
+        // return neighbour; // more wishful thinking
+        // }
+
+        // open.add(neighbour);
+        // }
+
+        // try {
+        // // Submit tasks and wait for one to complete with the correct result
+        // return findGoal();
+        // } catch (InterruptedException | ExecutionException e) {
+        // e.printStackTrace();
+        // return null;
+        // }
     }
 
 }
