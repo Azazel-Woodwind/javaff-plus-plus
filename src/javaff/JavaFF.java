@@ -147,8 +147,8 @@ public class JavaFF {
         this.useOutputFile = null;
         this.useEHC = true;
         // this.useEHC = false;
-        // this.useBFS = true;
-        this.useBFS = false;
+        this.useBFS = true;
+        // this.useBFS = false;
     }
 
     /**

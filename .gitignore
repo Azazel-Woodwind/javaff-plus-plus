@@ -4,3 +4,5 @@ META-INF
 tree.txt
 *.tgz
 test
+bin
+test.*

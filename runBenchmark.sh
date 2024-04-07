@@ -13,4 +13,5 @@ for jar in "$lib_dir"/*.jar; do
 done
 
 # Execute the Java command with the constructed classpath
-java -Xlog:gc*:file=gc.log -Xms512m -Xmx8g -cp "$classpath" benchmarker.Benchmarker
+# java -Xlog:gc*:file=gc.log -Xms512m -Xmx4g -cp "$classpath" benchmarker.Benchmarker
+java -Xms512m -Xmx4g -cp "$classpath" benchmarker.Benchmarker

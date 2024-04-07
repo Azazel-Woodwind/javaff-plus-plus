@@ -330,23 +330,35 @@ public class PlanningGraph {
         // AND oldGoal = new AND(this.goal);
         setGoal(s.goal);
 
-        System.out.println(propositions.size() + " " + localPropositionsMap.size());
-        System.out.println(actions.size() + " " + localActionsMap.size());
+        // System.out.println(propositions.size() + " " + localPropositionsMap.size());
+        // System.out.println(actions.size() + " " + localActionsMap.size());
 
         // set up the initial set of facts
         List<PGFact> scheduledFacts = new ArrayList<PGFact>(initial);
         scheduledFacts = this.filterFactLayer(scheduledFacts);
+        // for (PGFact f : scheduledFacts) {
+        // System.out.println(f + " " + f.getLayer() + " " +
+        // localPropositionsMap.containsKey(f));
+        // }
         List<PGAction> scheduledActs = null;
 
+        // System.out.println("HERE");
         scheduledActs = this.createFactLayer(scheduledFacts, 0);
+        // System.out.println("AFTER");
+        // for (PGAction a : scheduledActs) {
+        // System.out.println(a);
+        // }
         List plan = null;
 
         // can't remember why I did this... so I'm just leaving it. Probably something
         // to do with not destroying object references.
         HashSet<Fact> realInitial = new HashSet<Fact>();
         for (PGFact i : this.initial) {
+            // if (localPropositionsMap.containsKey(i)) {
+            // System.out.println("Using local PGFact");
+            // }
             i = localPropositionsMap.getOrDefault(i, i);
-            realInitial.add((Fact) i.getFact());
+            realInitial.add(i.getFact());
         }
 
         this.factLayers.add(realInitial); // add current layer
@@ -398,7 +410,7 @@ public class PlanningGraph {
                 break;
             }
         }
-        this.printGraph();
+        // this.printGraph();
 
         Plan top = this.constructPlan(plan, s.goal);
 
@@ -407,7 +419,6 @@ public class PlanningGraph {
         // System.out.println("WRONG");
 
         return top;
-
     }
 
     /**
@@ -656,11 +667,16 @@ public class PlanningGraph {
         Object o = propositionMap.get(p);
         PGFact pgp;
         if (o == null) {
+            // System.out.println("Creating new PGFact");
             pgp = new PGFact(p);
             propositionMap.put(p, pgp);
             propositions.add(pgp);
         } else {
+            // System.out.println("Using existing PGFact");
             pgp = (PGFact) o;
+            // if (localPropositionsMap.containsKey(pgp)) {
+            // System.out.println("Using local PGFact");
+            // }
             pgp = localPropositionsMap.getOrDefault(pgp, pgp);
         }
 
@@ -770,6 +786,7 @@ public class PlanningGraph {
     public void setInitial(State S) {
         this.initial = new HashSet<PGFact>();
 
+        // System.out.println("SETTING INITIAL STATE");
         // always add a TrueCondition to allow empty-precondition actions to execute
         PGFact truePGFact = this.getPGFact(TrueCondition.getInstance());
         initial.add(truePGFact);
@@ -778,6 +795,8 @@ public class PlanningGraph {
             PGFact pgp = this.getPGFact(p);
             this.initial.add(pgp);
         }
+
+        // System.out.println("INITIAL STATE SET");
     }
 
     protected void createNoOps() {
@@ -797,6 +816,7 @@ public class PlanningGraph {
     // ******************************************************
 
     protected ArrayList<PGAction> createFactLayer(List<PGFact> trueFacts, int pLayer) {
+        System.out.println("HERE 2");
         memoised.add(new HashSet<PGFact>());
         ArrayList<PGAction> scheduledActs = new ArrayList<PGAction>();
         HashSet<MutexPair> newMutexes = new HashSet<MutexPair>();
@@ -825,8 +845,10 @@ public class PlanningGraph {
         // }
 
         // check positive facts
+        System.out.println("HERE *******************************");
         for (PGFact f : trueFacts) {
             f = localPropositionsMap.getOrDefault(f, f);
+            System.out.println(localPropositionsMap.containsKey(f));
             if (f.getLayer() < 0) {
                 // if this fact has never been seen in the PG so far (its layer is < 0), say
                 // that it appears at this layer -- this will determine its "difficulty"
@@ -1950,6 +1972,7 @@ public class PlanningGraph {
         System.out.println("Facts:");
         Iterator pit = propositions.iterator();
         while (pit.hasNext()) {
+            // System.out.println(1);
             PGFact p = (PGFact) pit.next();
             p = localPropositionsMap.getOrDefault(p, p);
             if (p.getLayer() <= i && p.getLayer() >= 0) {
@@ -1964,6 +1987,8 @@ public class PlanningGraph {
                         System.out.println("\t\t\t" + pm);
                     }
                 }
+            } else {
+                System.out.println(p.getLayer());
             }
         }
         if (i == num_layers)
