@@ -1,21 +1,36 @@
-LARGE problems:
-domain 3
+PROBLEM IN QUESTION:
+problem 1/35: prob02.pddl of domain 3/20:logistics
 
-SMALL problems:
-domain 1, 4
+BFS SERIAL:
+7.8s
 
-185.335597824
+BFS PARALLEL V1 (Basic heuristic in parallel):
+4.8, 4.9, 5.0, 5.5, 5.3  (parallel streams)
 
-PARALLEL domain 1:
-5: 8s
-6: 6.6s
-7: 6s
-8: 5.3s
-9: 4.2s
+PROBLEM IN QUESTION:
+problem 3/35: prob02.pddl of domain 3/20:logistics
 
-SERIAL domain 1:
-5: 7.8
-6: 6.2
-7: 4.4
-8: 3.9
-9: 3.2
+EHC SERIAL:
+8.1, 7.7, 8.2
+
+EHC PARALLEL V1:
+5.0, 5.1, 5.0
+
+EHC PARALLEL V2:
+2.8, 2.8, 2.8
+
+AVERAGES in logistics domain
+3:
+Max layer size: 16
+Min layer size: 1
+Average layer size: 1.953125
+Max neighbour size: 23
+Min neighbour size: 1
+Average neighbour size: 9.49367088607595
+
+Max layer size: 23
+Min layer size: 1
+Average layer size: 2.110655737704918
+Max neighbour size: 46
+Min neighbour size: 1
+Average neighbour size: 12.540447504302927

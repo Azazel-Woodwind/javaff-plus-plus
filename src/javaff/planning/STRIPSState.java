@@ -209,10 +209,10 @@ public class STRIPSState extends State implements Cloneable {
         // for each, then plans will be invalid.
         STRIPSState succ = new STRIPSState(this.actions, new HashSet<Fact>(this.factsTrue),
                 new HashSet<Not>(this.factsNegated), this.goal);
-        succ.RPG = new RelaxedPlanningGraph(this.actions, this.goal); // MASSIVE
+        // succ.RPG = new RelaxedPlanningGraph(this.actions, this.goal); // MASSIVE
         // memory consumption -- cannot explain why
         // NEED TO CLONE GRAPH AS MULTIPLE THREADS USE THE GRAPH AT THE SAME TIME
-        // succ.RPG = this.RPG.branch(); // branch the RPG instead of cloning the old
+        succ.RPG = this.RPG.branch(); // branch the RPG instead of cloning the old
         // one -- retains the mutex info etc
         // succ.RPG = this.RPG.deepBranch(this.actions, this.goal);
 

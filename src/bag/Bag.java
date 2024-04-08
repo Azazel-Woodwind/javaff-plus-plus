@@ -247,4 +247,16 @@ public class Bag<T> implements IBag<T>, Iterable<T> {
     public boolean isEmpty() {
         return hopper.isEmpty() && spine.isEmpty();
     }
+
+    public static void main(String[] args) {
+        Bag<Integer> bag = new Bag<>();
+        bag.insert(1);
+        bag.insert(2);
+        bag.insert(3);
+
+        // split
+        Bag<Integer> newBag = (Bag<Integer>) bag.split();
+        System.out.println("Bag size: " + bag.size());
+        System.out.println("New bag size: " + newBag.size());
+    }
 }

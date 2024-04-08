@@ -54,6 +54,7 @@ import javaff.planning.NullFilter;
 import javaff.search.BestFirstSearch;
 import javaff.search.EnforcedHillClimbingSearch;
 import javaff.search.ParallelBestFirstSearch;
+import javaff.search.ParallelEnforcedHillClimbingSearch;
 import javaff.search.Search;
 import javaff.search.UnreachableGoalException;
 
@@ -847,7 +848,8 @@ public class JavaFF {
             infoOutput
                     .println("Performing search using EHC with standard helpful action filter");
 
-            Search EHCS = new EnforcedHillClimbingSearch(initialState);
+            // Search EHCS = new EnforcedHillClimbingSearch(initialState);
+            Search EHCS = new ParallelEnforcedHillClimbingSearch(initialState);
 
             // EHCS.setFilter(NullFilter.getInstance());
             EHCS.setFilter(HelpfulFilter.getInstance()); // and use the helpful
@@ -864,8 +866,8 @@ public class JavaFF {
         } else {
             infoOutput.println("Performing search using BFS");
             // create a Best-First Searcher
-            BestFirstSearch BFS = new BestFirstSearch(initialState);
-            // ParallelBestFirstSearch BFS = new ParallelBestFirstSearch(initialState);
+            // BestFirstSearch BFS = new BestFirstSearch(initialState);
+            ParallelBestFirstSearch BFS = new ParallelBestFirstSearch(initialState);
             BFS.setFilter(NullFilter.getInstance());
             goalState = BFS.search();
 

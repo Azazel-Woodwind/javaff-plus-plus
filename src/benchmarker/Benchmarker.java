@@ -30,6 +30,11 @@ public class Benchmarker {
     private static int maxActions = Integer.MIN_VALUE;
     private static int minActions = Integer.MAX_VALUE;
 
+    private static int localLayerSizeSum = 0;
+    private static int localMaxLayerSize = Integer.MIN_VALUE;
+    private static int localMinLayerSize = Integer.MAX_VALUE;
+    private static int localNumLayers = 0;
+
     private static int localNumNodes = 0;
     private static int localNeighbourSizeSum = 0;
     private static int localActionsSum = 0;
@@ -40,12 +45,23 @@ public class Benchmarker {
 
     public static void addToLayerCount(int count) {
         Benchmarker.layerSizeSum += count;
+        Benchmarker.localLayerSizeSum += count;
+
         Benchmarker.maxLayerSize = Math.max(Benchmarker.maxLayerSize, count);
+        Benchmarker.localMaxLayerSize = Math.max(Benchmarker.localMaxLayerSize, count);
+
+        Benchmarker.minLayerSize = Math.min(Benchmarker.minLayerSize, count);
+        Benchmarker.localMinLayerSize = Math.min(Benchmarker.localMinLayerSize, count);
 
         Benchmarker.numLayers++;
+        Benchmarker.localNumLayers++;
     }
 
     private static void resetLocals() {
+        Benchmarker.localLayerSizeSum = 0;
+        Benchmarker.localMaxLayerSize = Integer.MIN_VALUE;
+        Benchmarker.localMinLayerSize = Integer.MAX_VALUE;
+        Benchmarker.localNumLayers = 0;
         Benchmarker.localNumNodes = 0;
         Benchmarker.localNeighbourSizeSum = 0;
         Benchmarker.localActionsSum = 0;
@@ -92,6 +108,10 @@ public class Benchmarker {
         return (double) Benchmarker.layerSizeSum / Benchmarker.numLayers;
     }
 
+    private static double getAverageLocalLayerSize() {
+        return (double) Benchmarker.localLayerSizeSum / Benchmarker.localNumLayers;
+    }
+
     private static double getAverageNeighbourSize() {
         return (double) Benchmarker.neighbourSizeSum / Benchmarker.numNodes;
     }
@@ -128,7 +148,7 @@ public class Benchmarker {
             int problemsSolved = 0;
             double startTime, endTime, totalTime = 0;
             System.out.println("Found " + domains.length() + " domains in the FF benchmark set.");
-            for (int i = 0; i < 1; i++) {
+            for (int i = 3; i < 4; i++) {
                 String domainId = domainSet.get(i);
                 HashSet<String> badDomains = new HashSet<String>(Arrays.asList("15", "29"));
                 if (badDomains.contains(domainId)) {
@@ -163,7 +183,7 @@ public class Benchmarker {
                 Domain domain = new Domain(domainName, domainUrl);
 
                 System.out.println("Solving problems in domain " + domainId + "...");
-                for (int j = 10; j < 20; j++) {
+                for (int j = 3; j < 4; j++) {
                     JSONObject problem = problems.getJSONObject(j);
                     String problemUrl = problem.getString("problem_url");
                     String problemName = problem.getString("problem");
@@ -203,6 +223,10 @@ public class Benchmarker {
                     System.out.println("Took " + p.timeTaken + " seconds.");
                     System.out.println("Plan cost: " + cost);
                     totalTime += p.timeTaken;
+
+                    System.out.println("Max layer size: " + Benchmarker.localMaxLayerSize);
+                    System.out.println("Min layer size: " + Benchmarker.localMinLayerSize);
+                    System.out.println("Average layer size: " + getAverageLocalLayerSize());
                     System.out.println("Max neighbour size: " + Benchmarker.localMaxNeighbourSize);
                     System.out.println("Min neighbour size: " + Benchmarker.localMinNeighbourSize);
                     System.out.println("Average neighbour size: " + getAverageLocalNeighbourSize());
@@ -233,6 +257,7 @@ public class Benchmarker {
         }
 
         System.out.println("Max layer size: " + Benchmarker.maxLayerSize);
+        System.out.println("Min layer size: " + Benchmarker.minLayerSize);
         System.out.println("Average layer size: " + getAverageLayerSize());
         System.out.println("Max neighbour size: " + Benchmarker.maxNeighbourSize);
         System.out.println("Min neighbour size: " + Benchmarker.minNeighourSize);

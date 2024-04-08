@@ -8,6 +8,7 @@ import javaff.planning.Filter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.TreeSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -23,6 +24,8 @@ import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+
+import benchmarker.Benchmarker;
 
 public class ParallelBestFirstSearch extends Search {
 
@@ -49,41 +52,64 @@ public class ParallelBestFirstSearch extends Search {
         private final int start;
         private final int end;
         private final javaff.planning.State curr;
-        private static final int THRESHOLD = 6;
+        private final HashSet<javaff.planning.State> uniqueSuccessors;
+        private final int threshold;
+        // private static final int THRESHOLD = 6;
 
-        public ExpandTask(List<Action> list, int start, int end, javaff.planning.State curr) {
+        public ExpandTask(List<Action> list, int start, int end, javaff.planning.State curr, int threshold) {
             this.list = list;
             this.start = start;
             this.end = end;
             this.curr = curr;
+            this.uniqueSuccessors = new HashSet<>();
+            this.threshold = threshold;
         }
 
         @Override
         protected void compute() {
-            if ((end - start) <= THRESHOLD) {
+            if ((end - start) <= threshold) {
                 // Process the segment of the list directly
                 for (int i = start; i < end; i++) {
                     Action a = list.get(i);
                     javaff.planning.State succ = curr.getNextState(a);
-                    // succ.getHValue();
+                    if (!uniqueSuccessors.add(succ)) {
+                        continue;
+                    }
+
+                    succ.getHValue();
                     open.add(succ);
                     // Process item
                 }
             } else {
                 // Split the list and invoke new tasks
                 int mid = start + (end - start) / 2;
-                invokeAll(new ExpandTask(list, start, mid, curr),
-                        new ExpandTask(list, mid, end, curr));
+                invokeAll(new ExpandTask(list, start, mid, curr, threshold),
+                        new ExpandTask(list, mid, end, curr, threshold));
             }
         }
     }
 
     public void updateOpen(State S) {
         List<Action> applicable = filter.getActions(S);
-        try (ForkJoinPool pool = new ForkJoinPool()) {
-            // System.out.println(applicable.size());
-            pool.invoke(new ExpandTask(applicable, 0, applicable.size(), S));
-        }
+        Benchmarker.addToActionCount(applicable.size());
+        Set<State> uniqueSuccessors = Collections.synchronizedSet(new HashSet<>());
+        applicable.parallelStream().forEach(action -> {
+            State succ = S.getNextState(action);
+            if (!uniqueSuccessors.add(succ)) {
+                return;
+            }
+
+            succ.getHValue();
+            open.add(succ);
+        });
+        // try (ForkJoinPool pool = new ForkJoinPool()) {
+        // // System.out.println(applicable.size());
+        // int tasksPerProcessor = 1;
+        // int threshold = Math.max(1,
+        // applicable.size() / (Runtime.getRuntime().availableProcessors() *
+        // tasksPerProcessor));
+        // pool.invoke(new ExpandTask(applicable, 0, applicable.size(), S, threshold));
+        // }
         // open.addAll(S.getNextStates(filter.getActions(S)));
     }
 
