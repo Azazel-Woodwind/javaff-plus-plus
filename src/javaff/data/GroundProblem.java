@@ -36,6 +36,7 @@ import javaff.planning.RelaxedPlanningGraph;
 import javaff.planning.RelaxedMetricPlanningGraph;
 import javaff.planning.RelaxedTemporalMetricPlanningGraph;
 import javaff.search.UnreachableGoalException;
+import javaff.JavaFF;
 import javaff.data.adl.ADLFact;
 import javaff.data.adl.ConditionalEffect;
 import javaff.data.adl.Exists;
@@ -331,7 +332,9 @@ public class GroundProblem implements Cloneable {
 
     public STRIPSState recomputeSTRIPSInitialState() {
         STRIPSState s = new STRIPSState(getActions(), getInitial(), getGoal());
-        s.setRPG(new RelaxedPlanningGraph(this));
+        if (!JavaFF.useParallel) {
+            s.setRPG(new RelaxedPlanningGraph(this));
+        }
         this.setState(s);
 
         return (STRIPSState) this.getState();
@@ -437,6 +440,7 @@ public class GroundProblem implements Cloneable {
     public void filterReachableFacts(boolean ignoreUnreachableGoal) throws UnreachableGoalException {
         STRIPSState init = this.getSTRIPSInitialState();
 
+        // init.claimRPG();
         init.getRPG().constructStableGraph(init);
 
         Set<Fact> finalFacts = init.getRPG().getFactsAtLayer(init.getRPG().size());
@@ -465,6 +469,8 @@ public class GroundProblem implements Cloneable {
 
         int oldActionCount = this.getActions().size();
         this.getActions().retainAll(actionsUsed);
+
+        // init.revokeRPG();
 
         System.out.println("Found " + this.getReachableFacts().size()
                 + " reachable facts from " + oldFactCount + " original facts.");

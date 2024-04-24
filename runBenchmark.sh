@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Directory containing JAR files
 lib_dir="lib"
 
@@ -12,6 +10,7 @@ for jar in "$lib_dir"/*.jar; do
   classpath="$classpath:$jar"
 done
 
-# Execute the Java command with the constructed classpath
-# java -Xlog:gc*:file=gc.log -Xms512m -Xmx4g -cp "$classpath" benchmarker.Benchmarker
-java -Xms512m -Xmx4g -cp "$classpath" benchmarker.Benchmarker
+# # Execute the Java command with the constructed classpath
+# # java -Xlog:gc*:file=gc.log -Xms512m -Xmx4g -cp "$classpath" benchmarker.Benchmarker
+
+java -Xmx4g -cp "$classpath" benchmarker.Benchmarker

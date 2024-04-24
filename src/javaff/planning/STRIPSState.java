@@ -27,6 +27,7 @@
 
 package javaff.planning;
 
+import javaff.JavaFF;
 import javaff.data.Action;
 import javaff.data.CompoundLiteral;
 import javaff.data.Fact;
@@ -60,8 +61,8 @@ public class STRIPSState extends State implements Cloneable {
     protected Plan RelaxedPlan;
 
     protected RelaxedPlanningGraph RPG;
-    protected boolean RPCalculated;
-    protected BigDecimal HValue;
+    public boolean RPCalculated;
+    public BigDecimal HValue;
 
     protected STRIPSState() {
         super();
@@ -170,8 +171,8 @@ public class STRIPSState extends State implements Cloneable {
         SS.factsNegated = falseFacts;
 
         if (this.RPG != null) {
-            RelaxedPlanningGraph rpg = (RelaxedPlanningGraph) this.RPG.clone();
-            SS.RPG = rpg;
+            // RelaxedPlanningGraph rpg = (RelaxedPlanningGraph) this.RPG.clone();
+            // SS.RPG = rpg;
 
             SS.RPCalculated = this.RPCalculated;
         }
@@ -193,7 +194,26 @@ public class STRIPSState extends State implements Cloneable {
     }
 
     public RelaxedPlanningGraph getRPG() {
+        // return RPG;
+        if (RPG == null)
+            throw new RuntimeException("RPG not assigned to state");
+
         return RPG;
+    }
+
+    public void claimRPG() {
+        System.out.println("CLAIMING RPG");
+        if (RPG != null) {
+            throw new RuntimeException("RPG already assigned to state");
+        }
+
+        RPG = RPGManager.getInstance().requestRPG();
+    }
+
+    public void revokeRPG() {
+        System.out.println("REVOKING RPG");
+        RPGManager.getInstance().revokeRPG(RPG);
+        // RPG = null;
     }
 
     public State apply(Action a) {
@@ -212,7 +232,12 @@ public class STRIPSState extends State implements Cloneable {
         // succ.RPG = new RelaxedPlanningGraph(this.actions, this.goal); // MASSIVE
         // memory consumption -- cannot explain why
         // NEED TO CLONE GRAPH AS MULTIPLE THREADS USE THE GRAPH AT THE SAME TIME
-        succ.RPG = this.RPG.branch(); // branch the RPG instead of cloning the old
+        if (!JavaFF.useParallel) {
+            succ.RPG = this.RPG.branch(); // branch the RPG instead of cloning the old
+            succ.getRPG().setInitial(succ);
+            succ.getRPG().setGoal(this.goal);
+        }
+        // succ.claimRPG();
         // one -- retains the mutex info etc
         // succ.RPG = this.RPG.deepBranch(this.actions, this.goal);
 
@@ -220,8 +245,8 @@ public class STRIPSState extends State implements Cloneable {
         succ.RPCalculated = false; // should be false by default, but put it in anyway. Forces the EHC heuristic to
                                    // construct the RPG -- the
                                    // above line only sets up the required parameters.
-        succ.getRPG().setInitial(succ);
-        succ.getRPG().setGoal(this.goal);
+        // succ.getRPG().setInitial(succ);
+        // succ.getRPG().setGoal(this.goal);
         succ.plan = (TotalOrderPlan) this.plan.clone(); // clone because we may have multiple lead states
 
         // System.out.print("Applying in state "+succ.hashCode());
@@ -281,10 +306,20 @@ public class STRIPSState extends State implements Cloneable {
 
     public void calculateRP() {
         if (!RPCalculated) {
+            if (this.RPG == null) {
+                claimRPG();
+                // System.out.println("HERE");
+            }
+
             this.RelaxedPlan = RPG.getPlan(this);
+            if (JavaFF.useParallel) {
+                revokeRPG();
+            }
+
+            // System.out.println(RPGId);
+            // this.RelaxedPlan = RPGManager.getInstance().getPlan(RPGId, this);
             if (this.RelaxedPlan != null) {
                 this.HValue = new BigDecimal(this.RelaxedPlan.getPlanLength());
-
             } else
                 this.HValue = javaff.JavaFF.MAX_DURATION;
 

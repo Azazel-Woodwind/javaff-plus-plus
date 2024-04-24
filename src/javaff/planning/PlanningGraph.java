@@ -99,8 +99,8 @@ public class PlanningGraph {
     protected int numeric_level_off = 0;
     protected int num_layers;
 
-    protected HashMap<PGAction, PGAction> localActionsMap;
-    protected HashMap<PGFact, PGFact> localPropositionsMap;
+    private static int id = 0;
+    protected int myID;
 
     // ******************************************************
     // Main methods
@@ -120,8 +120,7 @@ public class PlanningGraph {
         this.propositions = new HashSet();
         this.readyActions = new HashSet<PlanningGraph.PGAction>();
         this.memoised = new ArrayList<Set<PGFact>>();
-        this.localActionsMap = new HashMap<PGAction, PGAction>();
-        this.localPropositionsMap = new HashMap<PGFact, PGFact>();
+        this.myID = PlanningGraph.id++;
     }
 
     // /**
@@ -194,8 +193,11 @@ public class PlanningGraph {
         this.readyActions = existingPG.readyActions;
         this.negativePCActions = existingPG.negativePCActions;
         this.memoised = existingPG.memoised;
-        this.localActionsMap = existingPG.localActionsMap;
-        this.localPropositionsMap = existingPG.localPropositionsMap;
+        this.myID = existingPG.myID;
+    }
+
+    public int getMyId() {
+        return myID;
     }
 
     public Object clone() {
@@ -220,53 +222,9 @@ public class PlanningGraph {
                 this.readyActions);
         clone.negativePCActions = new HashSet<PGAction>(this.negativePCActions);
         clone.memoised = new ArrayList<Set<PGFact>>(this.memoised);
+        clone.myID = this.myID;
 
         return clone;
-    }
-
-    public PlanningGraph deepBranch(Set groundActions, GroundFact goal) {
-        PlanningGraph branch = new PlanningGraph();
-        branch.setActionMap(groundActions);
-        // actionMap, actions
-        branch.setLinks();
-        // propositionMap, propositions, negativePCActions
-        branch.createNoOps();
-
-        branch.actionMap = new HashMap<Action, PlanningGraph.PGAction>();
-        branch.actions = new HashSet<PGAction>();
-
-        // for (Entry<Action, PGAction> entry : branch.actionMap.entrySet()) {
-        // PGAction action = entry.getValue();
-        // PGAction clone = action.clone();
-        // branch.actionMap.put(entry.getKey(), clone);
-        // branch.actions.add(clone);
-        // }
-
-        for (PGAction action : this.actions) {
-            PGAction clone = action.clone();
-            branch.actions.add(clone);
-            if (action.action != null) {
-                branch.actionMap.put(action.action, clone);
-            }
-        }
-
-        // branch.propositionMap = this.propositionMap;
-        // for (Entry<Fact, PGFact> entry : branch.propositionMap.entrySet()) {
-        // PGFact fact = entry.getValue();
-        // PGFact clone = fact.clone();
-        // branch.propositionMap.put(entry.getKey(), clone);
-        // branch.propositions.add(clone);
-        // }
-
-        // branch.actions = this.actions;
-        // for (PGAction action : this.actions) {
-        // branch.actions.add(action.clone());
-        // }
-        // branch.propositionMap = this.propositionMap;
-        // branch.propositions = this.propositions;
-        // branch.negativePCActions = this.negativePCActions;
-
-        return branch;
     }
 
     /**
@@ -288,13 +246,7 @@ public class PlanningGraph {
         PlanningGraph branch = new PlanningGraph();
 
         branch.actionMap = this.actionMap;
-        // branch.actionMutexes = this.actionMutexes;
-        // for (PGAction a : this.actions) {
-        // PGAction newAction = (PGAction) a.clone();
-        // // System.out.println(a.getConditions().size() + " " +
-        // // newAction.getConditions().size());
-        // branch.actions.add(newAction);
-        // }
+        branch.actionMutexes = this.actionMutexes;
         branch.actions = this.actions;
         // branch.factLayers = this.factLayers;
         // branch.goal = this.goal;
@@ -302,16 +254,13 @@ public class PlanningGraph {
         // branch.level_off = this.level_off;
         // branch.num_layers = this.num_layers;
         // branch.numeric_level_off = this.numeric_level_off;
-        // branch.propMutexes = this.propMutexes;
+        branch.propMutexes = this.propMutexes;
         branch.propositionMap = this.propositionMap;
-        // for (Object p : this.propositions) {
-        // branch.propositions.add(((PGFact) p).clone());
-        // }
         branch.propositions = this.propositions;
         branch.negativePCActions = this.negativePCActions;
         // branch.readyActions = this.readyActions;
         // branch.state = this.state;
-
+        branch.myID = this.myID;
         return branch;
     }
 
@@ -330,40 +279,24 @@ public class PlanningGraph {
         // AND oldGoal = new AND(this.goal);
         setGoal(s.goal);
 
-        // System.out.println(propositions.size() + " " + localPropositionsMap.size());
-        // System.out.println(actions.size() + " " + localActionsMap.size());
-
         // set up the initial set of facts
         List<PGFact> scheduledFacts = new ArrayList<PGFact>(initial);
         scheduledFacts = this.filterFactLayer(scheduledFacts);
-        // for (PGFact f : scheduledFacts) {
-        // System.out.println(f + " " + f.getLayer() + " " +
-        // localPropositionsMap.containsKey(f));
-        // }
         List<PGAction> scheduledActs = null;
 
-        // System.out.println("HERE");
         scheduledActs = this.createFactLayer(scheduledFacts, 0);
-        // System.out.println("AFTER");
-        // for (PGAction a : scheduledActs) {
-        // System.out.println(a);
-        // }
         List plan = null;
 
         // can't remember why I did this... so I'm just leaving it. Probably something
         // to do with not destroying object references.
         HashSet<Fact> realInitial = new HashSet<Fact>();
         for (PGFact i : this.initial) {
-            // if (localPropositionsMap.containsKey(i)) {
-            // System.out.println("Using local PGFact");
-            // }
-            i = localPropositionsMap.getOrDefault(i, i);
-            realInitial.add(i.getFact());
+            realInitial.add((Fact) i.getFact());
         }
 
         this.factLayers.add(realInitial); // add current layer
 
-        // create the graph
+        // create the graph==========================================
         while (true) {
             scheduledFacts = this.createActionLayer(scheduledActs, num_layers);
             scheduledFacts = this.filterFactLayer(scheduledFacts);
@@ -379,10 +312,8 @@ public class PlanningGraph {
             if (scheduledFacts != null) {
                 HashSet<Fact> factList = new HashSet<Fact>();
                 // plan = extractPlan();
-                for (Object pgp : scheduledFacts) {
-                    pgp = localPropositionsMap.getOrDefault(pgp, (PGFact) pgp);
+                for (Object pgp : scheduledFacts)
                     factList.add(((PGFact) pgp).getFact());
-                }
 
                 boolean res = factList.addAll(this.factLayers.get(num_layers - 1));
                 // if (res == false)
@@ -419,6 +350,7 @@ public class PlanningGraph {
         // System.out.println("WRONG");
 
         return top;
+
     }
 
     /**
@@ -445,7 +377,6 @@ public class PlanningGraph {
             Iterator pit = plan.iterator();
             while (pit.hasNext()) {
                 PGAction a = (PGAction) pit.next();
-                a = localActionsMap.getOrDefault(a, a);
                 if (!(a instanceof PGNoOp))
                     p.addAction(a.getAction());
             }
@@ -501,14 +432,7 @@ public class PlanningGraph {
                 for (PGFact pc : a.conditions) {
                     if (pc.getFact() instanceof Not) {
                         // if a negative precondition is not explicit, assume it is true by its absence
-                        // PGFact local = localPropositionsMap.get(pc);
-                        // if (local == null) {
-                        // set.add(pc);
-                        // } else {
-                        // set.add(local);
-                        // }
-
-                        set.add(localPropositionsMap.getOrDefault(pc, pc));
+                        set.add(pc);
                         // if (set.contains(pc) == false)
                         // {
                         // a.setCounter(a.getCounter() + 1);
@@ -531,12 +455,9 @@ public class PlanningGraph {
      */
     // FIXME merge this code into getPlan()/remove duplication
     public void constructStableGraph(State init) {
-        setInitial(init);
         resetAll(init);
+        setInitial(init);
         setGoal(init.goal);
-
-        System.out.println(propositions.size() + " " + localPropositionsMap.size());
-        System.out.println(actions.size() + " " + localActionsMap.size());
 
         // set up the initial set of facts
         List<PGFact> scheduledFacts = new ArrayList<PGFact>(this.initial);
@@ -550,7 +471,6 @@ public class PlanningGraph {
         //
         HashSet<Fact> realInitial = new HashSet<Fact>();
         for (PGFact i : this.initial) {
-            i = localPropositionsMap.getOrDefault(i, i);
             realInitial.add((Fact) i.getFact());
         }
 
@@ -559,6 +479,7 @@ public class PlanningGraph {
 
         // create the graph==========================================
         while (true) {
+
             scheduledFacts = createActionLayer(scheduledActs, num_layers);
             scheduledFacts = this.filterFactLayer(scheduledFacts);
 
@@ -568,10 +489,8 @@ public class PlanningGraph {
             if (scheduledFacts != null) {
                 HashSet factList = new HashSet();
                 // plan = extractPlan();
-                for (Object pgp : scheduledFacts) {
-                    pgp = localPropositionsMap.getOrDefault(pgp, (PGFact) pgp);
+                for (Object pgp : scheduledFacts)
                     factList.add(((PGFact) pgp).getFact());
-                }
 
                 boolean res = factList.addAll(this.factLayers.get(num_layers - 1));
                 // if (res == false)
@@ -604,9 +523,7 @@ public class PlanningGraph {
             return app;
 
         for (Entry<Action, PGAction> a : this.actionMap.entrySet()) {
-            PGAction pga = localActionsMap.getOrDefault(a.getValue(), a.getValue());
-            if (pga.getLayer() == l)
-                // if (a.getValue().layer <= l && a.getValue().layer >= 0)
+            if (a.getValue().getLayer() == l)
                 app.add(a.getKey());
 
         }
@@ -667,19 +584,11 @@ public class PlanningGraph {
         Object o = propositionMap.get(p);
         PGFact pgp;
         if (o == null) {
-            // System.out.println("Creating new PGFact");
             pgp = new PGFact(p);
             propositionMap.put(p, pgp);
             propositions.add(pgp);
-        } else {
-            // System.out.println("Using existing PGFact");
+        } else
             pgp = (PGFact) o;
-            // if (localPropositionsMap.containsKey(pgp)) {
-            // System.out.println("Using local PGFact");
-            // }
-            pgp = localPropositionsMap.getOrDefault(pgp, pgp);
-        }
-
         return pgp;
     }
 
@@ -747,8 +656,8 @@ public class PlanningGraph {
         // TODO should these resets be ignored? If we use another PG to create this one
         // then we're just destroying
         // all the hard work of the previous PG
-        // propMutexes = new HashSet();
-        // actionMutexes = new HashSet();
+        propMutexes = new HashSet();
+        actionMutexes = new HashSet();
 
         memoised.clear();
 
@@ -759,19 +668,13 @@ public class PlanningGraph {
         Iterator ait = actions.iterator();
         while (ait.hasNext()) {
             PGAction a = (PGAction) ait.next();
-            // a.reset();
-            PGAction localAction = a.clone();
-            localActionsMap.put(a, localAction);
-            localAction.reset();
+            a.reset();
         }
 
         Iterator pit = propositions.iterator();
         while (pit.hasNext()) {
             PGFact p = (PGFact) pit.next();
-            // p.reset();
-            PGFact localProp = p.clone();
-            localPropositionsMap.put(p, localProp);
-            localProp.reset();
+            p.reset();
         }
     }
 
@@ -786,7 +689,6 @@ public class PlanningGraph {
     public void setInitial(State S) {
         this.initial = new HashSet<PGFact>();
 
-        // System.out.println("SETTING INITIAL STATE");
         // always add a TrueCondition to allow empty-precondition actions to execute
         PGFact truePGFact = this.getPGFact(TrueCondition.getInstance());
         initial.add(truePGFact);
@@ -795,8 +697,6 @@ public class PlanningGraph {
             PGFact pgp = this.getPGFact(p);
             this.initial.add(pgp);
         }
-
-        // System.out.println("INITIAL STATE SET");
     }
 
     protected void createNoOps() {
@@ -816,7 +716,6 @@ public class PlanningGraph {
     // ******************************************************
 
     protected ArrayList<PGAction> createFactLayer(List<PGFact> trueFacts, int pLayer) {
-        System.out.println("HERE 2");
         memoised.add(new HashSet<PGFact>());
         ArrayList<PGAction> scheduledActs = new ArrayList<PGAction>();
         HashSet<MutexPair> newMutexes = new HashSet<MutexPair>();
@@ -845,21 +744,14 @@ public class PlanningGraph {
         // }
 
         // check positive facts
-        System.out.println("HERE *******************************");
         for (PGFact f : trueFacts) {
-            f = localPropositionsMap.getOrDefault(f, f);
-            System.out.println(localPropositionsMap.containsKey(f));
             if (f.getLayer() < 0) {
                 // if this fact has never been seen in the PG so far (its layer is < 0), say
                 // that it appears at this layer -- this will determine its "difficulty"
                 f.setLayer(pLayer);
 
                 // add all actions which this fact enables
-                for (PGAction a : f.getEnables()) {
-                    a = localActionsMap.getOrDefault(a, a);
-                    scheduledActs.add(a);
-                }
-                // scheduledActs.addAll(f.getEnables());
+                scheduledActs.addAll(f.getEnables());
 
                 level_off = false;
 
@@ -868,7 +760,6 @@ public class PlanningGraph {
                     Iterator pit = propositions.iterator();
                     while (pit.hasNext()) {
                         PGFact p = (PGFact) pit.next();
-                        p = localPropositionsMap.get(p);
                         if (p.getLayer() >= 0 && this.checkPropMutex(f, p, pLayer)) {
                             this.makeMutex(f, p, pLayer, newMutexes);
                         }
@@ -903,7 +794,6 @@ public class PlanningGraph {
         STRIPSState hackState = new STRIPSState(); // easier to create a state than duplicate the Not code check for
                                                    // isTrue()
         for (PGFact f : trueFacts) {
-            f = localPropositionsMap.getOrDefault(f, f);
             hackState.addFact(f.getFact());
         }
 
@@ -911,9 +801,7 @@ public class PlanningGraph {
         // -- no point in checking the others as actions with positive
         // preconditions will always be picked up by the above code.
         for (PGAction a : this.negativePCActions) {
-            a = localActionsMap.getOrDefault(a, a);
             for (PGFact f : a.getConditions()) {
-                f = localPropositionsMap.getOrDefault(f, f);
                 if (f.getFact() instanceof Not) {
                     if (((Not) f.getFact()).isTrue(hackState)) {
                         if (f.getLayer() < 0) {
@@ -922,11 +810,7 @@ public class PlanningGraph {
                             f.setLayer(pLayer);
 
                             // add all actions which this fact enables
-                            for (PGAction enable : f.getEnables()) {
-                                enable = localActionsMap.getOrDefault(enable, enable);
-                                scheduledActs.add(enable);
-                            }
-                            // scheduledActs.addAll(f.getEnables());
+                            scheduledActs.addAll(f.getEnables());
 
                             level_off = false;
 
@@ -935,7 +819,6 @@ public class PlanningGraph {
                                 Iterator pit = propositions.iterator();
                                 while (pit.hasNext()) {
                                     PGFact p = (PGFact) pit.next();
-                                    p = localPropositionsMap.get(p);
                                     if (p.getLayer() >= 0 && this.checkPropMutex(f, p, pLayer)) {
                                         this.makeMutex(f, p, pLayer, newMutexes);
                                     }
@@ -1019,10 +902,7 @@ public class PlanningGraph {
         level_off = true;
         HashSet<PGAction> actionSet = this
                 .getAvailableActions(pActions, pLayer);
-        for (PGAction a : readyActions) {
-            actionSet.add(localActionsMap.getOrDefault(a, a));
-        }
-        // actionSet.addAll(readyActions);
+        actionSet.addAll(readyActions);
         readyActions = new HashSet<PGAction>();
         HashSet<PGAction> filteredSet = this.filterSet(actionSet, pLayer);
         ArrayList<PGFact> scheduledFacts = this.calculateActionMutexesAndProps(
@@ -1045,7 +925,7 @@ public class PlanningGraph {
             int pLayer) {
         HashSet<PGAction> actionSet = new HashSet<PGAction>();
         for (PGAction a : pActions) {
-            a = localActionsMap.getOrDefault(a, a);
+
             if (a.getLayer() < 0) {
                 a.setCounter(a.getCounter() + 1);
                 a.setDifficulty(a.getDifficulty() + pLayer);
@@ -1095,7 +975,6 @@ public class PlanningGraph {
     protected HashSet<PGAction> filterSet(Set<PGAction> pActions, int pLayer) {
         HashSet<PGAction> filteredSet = new HashSet<PGAction>();
         for (PGAction a : pActions) {
-            a = localActionsMap.getOrDefault(a, a);
             if (this.noMutexes(a.getConditions(), pLayer))
                 filteredSet.add(a);
             else
@@ -1111,11 +990,7 @@ public class PlanningGraph {
         ArrayList<PGFact> scheduledFacts = new ArrayList<PGFact>();
 
         for (PGAction a : filteredSet) {
-            a = localActionsMap.getOrDefault(a, a);
-            for (PGFact achieves : a.getAchieves()) {
-                scheduledFacts.add(localPropositionsMap.getOrDefault(achieves, achieves));
-            }
-            // scheduledFacts.addAll(a.getAchieves());
+            scheduledFacts.addAll(a.getAchieves());
             a.setLayer(pLayer);
             level_off = false;
 
@@ -1123,7 +998,6 @@ public class PlanningGraph {
             Iterator a2it = actions.iterator();
             while (a2it.hasNext()) {
                 PGAction a2 = (PGAction) a2it.next();
-                a2 = localActionsMap.getOrDefault(a2, a2);
                 if (a2.getLayer() >= 0 && checkActionMutex(a, a2, pLayer)) {
                     // System.out.println("adding action mutex at layer " + pLayer
                     // + "- " + a2 + " <-> " + a);
@@ -1239,7 +1113,6 @@ public class PlanningGraph {
 
     protected boolean goalMet() {
         for (PGFact p : this.goal) {
-            p = localPropositionsMap.getOrDefault(p, p);
             if (p.getLayer() < 0) {
                 return false;
             }
@@ -1260,7 +1133,6 @@ public class PlanningGraph {
             Iterator s2it = s2.iterator();
             while (s2it.hasNext()) {
                 Node n2 = (Node) s2it.next();
-                n2 = (Node) localPropositionsMap.getOrDefault((PGFact) n, (PGFact) n);
                 if (n.mutexWith(n2, l))
                     return false;
             }
@@ -1307,11 +1179,6 @@ public class PlanningGraph {
      */
     public List<PGAction> searchPlan(Set<PGFact> goalSet, int l) {
 
-        Set<PGFact> temp = new HashSet<>();
-        for (PGFact f : goalSet) {
-            temp.add(localPropositionsMap.getOrDefault(f, f));
-        }
-        goalSet = temp;
         if (l == 0) {
             if (initial.containsAll(goalSet))
                 return new ArrayList<PGAction>();
@@ -1344,7 +1211,6 @@ public class PlanningGraph {
             Set<PGFact> newgoal = new HashSet<PGFact>();
 
             for (PGAction a : as) {
-                a = localActionsMap.getOrDefault(a, a);
                 // construct a new goal set
                 // from the non-mutex action
                 // set's effects
@@ -1353,20 +1219,19 @@ public class PlanningGraph {
                 // vanilla JavaFF removes these, but this will cause invalid plans to be
                 // produced
                 // unless we explicitly ignore them here
-                // newgoal.addAll(a.getConditions());
-                for (PGFact f : a.getConditions()) {
-                    newgoal.add(localPropositionsMap.getOrDefault(f, f));
-                }
+                newgoal.addAll(a.getConditions());
+                // for (PGFact f : a.getConditions())
+                // {
+                // if (!f.getFact().isStatic())
+                // newgoal.add(f);
+                // }
             }
 
             List<PGAction> al = searchPlan(newgoal, (l - 1)); // try to find a plan to
             // this new goal
             if (al != null) {
                 List<PGAction> plan = new ArrayList<PGAction>(al);
-                for (PGAction a : as) {
-                    plan.add(localActionsMap.getOrDefault(a, a));
-                }
-                // plan.addAll(as);
+                plan.addAll(as);
                 return plan; // if a plan was found, return it, else loop to the
                              // next set.
             }
@@ -1405,14 +1270,10 @@ public class PlanningGraph {
 
         // always prefer No-ops
         for (PGAction a : g.getAchievedBy()) {
-            a = localActionsMap.getOrDefault(a, a);
             // System.out.println("Checking "+a+" for no op");
             if ((a instanceof PGNoOp) && a.getLayer() <= layer && a.getLayer() >= 0) {
                 Set<PGFact> newnewGoalSet = new HashSet<PGFact>(newGoalSet);
-                for (PGFact f : a.getAchieves()) {
-                    newnewGoalSet.remove(localPropositionsMap.getOrDefault(f, f));
-                }
-                // newnewGoalSet.removeAll(a.getAchieves());
+                newnewGoalSet.removeAll(a.getAchieves());
 
                 // search the same layer for the remaining goals
                 List<Set<PGAction>> allActionCombinations = this.searchLevel(newnewGoalSet, layer);
@@ -1427,17 +1288,13 @@ public class PlanningGraph {
         }
 
         for (PGAction a : g.getAchievedBy()) {
-            a = localActionsMap.getOrDefault(a, a);
             // ignore no-ops
             if (!(a instanceof PGNoOp) && a.getLayer() <= layer && a.getLayer() >= 0) {
                 Set<PGFact> newnewGoalSet = new HashSet<PGFact>(newGoalSet); // copy over
                 // current goal
                 // set
-                for (PGFact f : a.getAchieves()) {
-                    newnewGoalSet.remove(localPropositionsMap.getOrDefault(f, f));
-                }
-                // newnewGoalSet.removeAll(a.getAchieves()); // remove all facts
-                // achieved by A
+                newnewGoalSet.removeAll(a.getAchieves()); // remove all facts
+                                                          // achieved by A
                 // search the same layer for the remaining goals
                 List<Set<PGAction>> allActionCombinations = this.searchLevel(newnewGoalSet, layer);
 
@@ -1465,7 +1322,7 @@ public class PlanningGraph {
     // ******************************************************
     // protected Classes
     // ******************************************************
-    public class Node implements Cloneable {
+    public class Node {
         private int layer;
         private Set mutexes;
 
@@ -1477,21 +1334,8 @@ public class PlanningGraph {
         public Node() {
             this.mutexes = new HashSet(1);
             this.mutexTable = new HashMap(1);
-            this.layer = -1;
 
             this.updateHash();
-        }
-
-        @Override
-        protected Node clone() {
-            Node cloned = null;
-            try {
-                cloned = (Node) super.clone();
-            } catch (CloneNotSupportedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return cloned;
         }
 
         @Override
@@ -1653,20 +1497,6 @@ public class PlanningGraph {
         @Override
         public int hashCode() {
             return this.hash;
-        }
-
-        @Override
-        public PGAction clone() {
-            PGAction cloned = (PGAction) super.clone(); // Call to `super.clone()` ensures cloning of fields from the
-                                                        // superclass.
-
-            // Deep copy of mutable fields
-            // if (this.someField != null) {
-            // cloned.someField = (SomeMutableType) this.someField.clone(); // Assumes
-            // SomeMutableType also implements Cloneable and overrides clone.
-            // }
-
-            return cloned;
         }
 
         public Set getComparators() {
@@ -1844,20 +1674,6 @@ public class PlanningGraph {
             return this.hash;
         }
 
-        @Override
-        public PGFact clone() {
-            PGFact cloned = (PGFact) super.clone(); // Call to `super.clone()` ensures cloning of fields from the
-                                                    // superclass.
-
-            // Deep copy of mutable fields
-            // if (this.someField != null) {
-            // cloned.someField = (SomeMutableType) this.someField.clone(); // Assumes
-            // SomeMutableType also implements Cloneable and overrides clone.
-            // }
-
-            return cloned;
-        }
-
         public String toString() {
             return getFact().toString();
         }
@@ -1972,23 +1788,18 @@ public class PlanningGraph {
         System.out.println("Facts:");
         Iterator pit = propositions.iterator();
         while (pit.hasNext()) {
-            // System.out.println(1);
             PGFact p = (PGFact) pit.next();
-            p = localPropositionsMap.getOrDefault(p, p);
             if (p.getLayer() <= i && p.getLayer() >= 0) {
                 System.out.println("\t" + p);
                 System.out.println("\t\tmutex with");
                 Iterator mit = p.getMutexTable().keySet().iterator();
                 while (mit.hasNext()) {
                     PGFact pm = (PGFact) mit.next();
-                    pm = localPropositionsMap.getOrDefault(pm, pm);
                     Integer il = (Integer) p.getMutexTable().get(pm);
                     if (il.intValue() >= i) {
                         System.out.println("\t\t\t" + pm);
                     }
                 }
-            } else {
-                System.out.println(p.getLayer());
             }
         }
         if (i == num_layers)
@@ -1997,14 +1808,12 @@ public class PlanningGraph {
         Iterator ait = actions.iterator();
         while (ait.hasNext()) {
             PGAction a = (PGAction) ait.next();
-            a = localActionsMap.getOrDefault(a, a);
             if (a.getLayer() <= i && a.getLayer() >= 0) {
                 System.out.println("\t" + a);
                 System.out.println("\t\tmutex with");
                 Iterator mit = a.getMutexTable().keySet().iterator();
                 while (mit.hasNext()) {
                     PGAction am = (PGAction) mit.next();
-                    am = localActionsMap.getOrDefault(am, am);
                     Integer il = (Integer) a.getMutexTable().get(am);
                     if (il.intValue() >= i) {
                         System.out.println("\t\t\t" + am);

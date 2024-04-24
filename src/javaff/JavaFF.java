@@ -51,6 +51,7 @@ import javaff.planning.STRIPSState;
 import javaff.planning.State;
 import javaff.planning.TemporalMetricState;
 import javaff.planning.NullFilter;
+import javaff.planning.RPGManager;
 import javaff.search.BestFirstSearch;
 import javaff.search.EnforcedHillClimbingSearch;
 import javaff.search.ParallelBestFirstSearch;
@@ -131,9 +132,11 @@ public class JavaFF {
     public static PrintStream errorOutput = System.err;
 
     public static final ExecutorService executorService = Executors
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            .newFixedThreadPool(64);
 
     public double timeTaken;
+    public double planningEHCTime;
+    public double planningBFSTime;
 
     protected File domainFile, problemFile;
 
@@ -142,6 +145,8 @@ public class JavaFF {
     protected String domainStr, problemStr;
 
     protected boolean useEHC, useBFS;
+
+    public static boolean useParallel = false;
 
     protected JavaFF() {
         this.domainFile = null;
@@ -393,6 +398,10 @@ public class JavaFF {
     protected Plan doSTRIPSPlan(GroundProblem ground)
             throws UnreachableGoalException {
         STRIPSState initialState = ground.recomputeSTRIPSInitialState();
+        if (JavaFF.useParallel) {
+            RPGManager.getInstance().initialiseRPGs(initialState);
+
+        }
 
         return this.performPlanning(ground, initialState);
     }
@@ -410,8 +419,6 @@ public class JavaFF {
 
         System.out.println("Goal is: " + ground.getGoal().toString());
 
-        double planningEHCTime = 0;
-        double planningBFSTime = 0;
         if (this.isUseEHC()) {
             System.out.println("Running FF with EHC...");
             startTime = System.nanoTime();
@@ -589,6 +596,8 @@ public class JavaFF {
         // used only understands
         // STRIPS facts
         System.out.println("Performing RPG reachability analysis...");
+        // State s = ground.getSTRIPSInitialState();
+        // RPGManager.getInstance().initialiseRPGs(s);
         ground.filterReachableFacts();
 
         // Select the correct problem type to generate -- doing a STRIPS only domain
@@ -848,8 +857,12 @@ public class JavaFF {
             infoOutput
                     .println("Performing search using EHC with standard helpful action filter");
 
-            // Search EHCS = new EnforcedHillClimbingSearch(initialState);
-            Search EHCS = new ParallelEnforcedHillClimbingSearch(initialState);
+            Search EHCS;
+            if (JavaFF.useParallel) {
+                EHCS = new ParallelEnforcedHillClimbingSearch(initialState);
+            } else {
+                EHCS = new EnforcedHillClimbingSearch(initialState);
+            }
 
             // EHCS.setFilter(NullFilter.getInstance());
             EHCS.setFilter(HelpfulFilter.getInstance()); // and use the helpful
@@ -866,8 +879,14 @@ public class JavaFF {
         } else {
             infoOutput.println("Performing search using BFS");
             // create a Best-First Searcher
-            // BestFirstSearch BFS = new BestFirstSearch(initialState);
-            ParallelBestFirstSearch BFS = new ParallelBestFirstSearch(initialState);
+
+            Search BFS;
+            if (JavaFF.useParallel) {
+                BFS = new ParallelBestFirstSearch(initialState);
+            } else {
+                BFS = new BestFirstSearch(initialState);
+            }
+
             BFS.setFilter(NullFilter.getInstance());
             goalState = BFS.search();
 

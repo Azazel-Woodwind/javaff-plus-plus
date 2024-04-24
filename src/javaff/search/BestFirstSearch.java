@@ -58,9 +58,9 @@ public class BestFirstSearch extends Search {
 
     public void updateOpen(State S) {
         List<Action> actions = filter.getActions(S);
-        Benchmarker.addToActionCount(actions.size());
+        // Benchmarker.addToActionCount(actions.size());
         Set<State> neighbours = S.getNextStates(actions);
-        Benchmarker.addToNeighbourCount(neighbours.size());
+        // Benchmarker.addToNeighbourCount(neighbours.size());
         open.addAll(neighbours);
     }
 

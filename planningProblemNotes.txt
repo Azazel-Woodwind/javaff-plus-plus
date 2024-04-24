@@ -7,17 +7,26 @@ BFS SERIAL:
 BFS PARALLEL V1 (Basic heuristic in parallel):
 4.8, 4.9, 5.0, 5.5, 5.3  (parallel streams)
 
+BFS PARALLEL V2 (using RPGManager):
+3.6, 3.6, 3.3
+
+BFS PARALLEL V3 (adaptive K parallel):
+2.5, 2.9, 2.9
+
 PROBLEM IN QUESTION:
 problem 3/35: prob02.pddl of domain 3/20:logistics
 
 EHC SERIAL:
 8.1, 7.7, 8.2
 
-EHC PARALLEL V1:
+EHC PARALLEL V1 (normal fork join thresholds):
 5.0, 5.1, 5.0
 
-EHC PARALLEL V2:
+EHC PARALLEL V2 (better thread management):
 2.8, 2.8, 2.8
+
+EHC PARALLEL V3 (using RPGManager):
+2.6, 2.5, 3.0, 2.7, 2.8
 
 AVERAGES in logistics domain
 3:

@@ -178,27 +178,6 @@ public class RelaxedPlanningGraph extends PlanningGraph {
         return clone;
     }
 
-    public RelaxedPlanningGraph deepBranch(Set groundActions, GroundFact goal) {
-        RelaxedPlanningGraph branch = new RelaxedPlanningGraph(super.deepBranch(groundActions, goal));
-
-        // branch.actionMap = this.actionMap;
-        // branch.actionMutexes = this.actionMutexes;
-        // branch.actions = this.actions;
-        //// branch.factLayers = this.factLayers;
-        //// branch.goal = this.goal;
-        //// branch.initial = this.initial;
-        //// branch.level_off = this.level_off;
-        //// branch.num_layers = this.num_layers;
-        //// branch.numeric_level_off = this.numeric_level_off;
-        // branch.propMutexes = this.propMutexes;
-        // branch.propositionMap = this.propositionMap;
-        // branch.propositions = this.propositions;
-        // branch.negativePCActions = this.negativePCActions;
-        //// branch.readyActions = this.readyActions;
-
-        return branch;
-    }
-
     @Override
     public RelaxedPlanningGraph branch() {
         RelaxedPlanningGraph branch = new RelaxedPlanningGraph(super.branch());
@@ -256,7 +235,7 @@ public class RelaxedPlanningGraph extends PlanningGraph {
     // Naturally, any changes to the superclass' code will need to be reflected
     // here.
     protected ArrayList<PGAction> createFactLayer(List<PGFact> trueFacts, int pLayer) {
-        // System.out.println("HERE 2");
+
         memoised.add(new HashSet<PGFact>());
         ArrayList<PGAction> scheduledActs = new ArrayList<PGAction>();
 
@@ -285,18 +264,13 @@ public class RelaxedPlanningGraph extends PlanningGraph {
 
         // check positive facts
         for (PGFact f : trueFacts) {
-            f = localPropositionsMap.getOrDefault(f, f);
             if (f.getLayer() < 0) {
                 // if this fact has never been seen in the PG so far (its layer is < 0), say
                 // that it appears at this layer -- this will determine its "difficulty"
                 f.setLayer(pLayer);
 
                 // add all actions which this fact enables
-                for (PGAction a : f.getEnables()) {
-                    a = localActionsMap.getOrDefault(a, a);
-                    scheduledActs.add(a);
-                }
-                // scheduledActs.addAll(f.getEnables());
+                scheduledActs.addAll(f.getEnables());
 
                 level_off = false;
 
@@ -331,7 +305,6 @@ public class RelaxedPlanningGraph extends PlanningGraph {
         STRIPSState hackState = new STRIPSState(); // easier to create a state than duplicate the Not code check for
                                                    // isTrue()
         for (PGFact f : trueFacts) {
-            f = localPropositionsMap.getOrDefault(f, f);
             hackState.addFact(f.getFact());
         }
 
@@ -339,9 +312,7 @@ public class RelaxedPlanningGraph extends PlanningGraph {
         // -- no point in checking the others as actions with positive
         // preconditions will always be picked up by the above code.
         for (PGAction a : this.negativePCActions) {
-            a = localActionsMap.getOrDefault(a, a);
             for (PGFact f : a.getConditions()) {
-                f = localPropositionsMap.getOrDefault(f, f);
                 if (f.getFact() instanceof Not) {
                     if (((Not) f.getFact()).isTrue(hackState)) {
                         if (f.getLayer() < 0) {
@@ -350,11 +321,7 @@ public class RelaxedPlanningGraph extends PlanningGraph {
                             f.setLayer(pLayer);
 
                             // add all actions which this fact enables
-                            for (PGAction enables : f.getEnables()) {
-                                enables = localActionsMap.getOrDefault(enables, enables);
-                                scheduledActs.add(enables);
-                            }
-                            // scheduledActs.addAll(f.getEnables());
+                            scheduledActs.addAll(f.getEnables());
 
                             level_off = false;
 
@@ -379,10 +346,8 @@ public class RelaxedPlanningGraph extends PlanningGraph {
         Set<PGAction> chosenActions = new HashSet<PGAction>();
         // loop through actions to achieve the goal set
         for (PGFact g : goalSet) {
-            g = localPropositionsMap.getOrDefault(g, g);
             PGAction a = null;
             for (PGAction na : g.getAchievedBy()) {
-                na = localActionsMap.getOrDefault(na, na);
                 if (na.getLayer() < l && na.getLayer() >= 0) {
                     if (na instanceof PGNoOp) {
                         a = na;
@@ -409,11 +374,7 @@ public class RelaxedPlanningGraph extends PlanningGraph {
         Iterator<PGAction> cait = chosenActions.iterator();
         while (cait.hasNext()) {
             PGAction ca = (PGAction) cait.next();
-            ca = localActionsMap.getOrDefault(ca, ca);
-            for (PGFact f : ca.getConditions()) {
-                newGoalSet.add(localPropositionsMap.getOrDefault(f, f));
-            }
-            // newGoalSet.addAll(ca.getConditions());
+            newGoalSet.addAll(ca.getConditions());
         }
 
         // if l == 1, then we want to find helpful actions. These are the actions which
@@ -425,12 +386,10 @@ public class RelaxedPlanningGraph extends PlanningGraph {
         if (l == 1) {
             STRIPSState initialState = new STRIPSState();
             for (PGFact f : this.initial) {
-                f = localPropositionsMap.getOrDefault(f, f);
                 initialState.addFact(f.getFact());
             }
 
             for (PGAction a : chosenActions) {
-                a = localActionsMap.getOrDefault(a, a);
                 if (a instanceof PGNoOp)
                     continue;
 
@@ -475,7 +434,6 @@ public class RelaxedPlanningGraph extends PlanningGraph {
             return -1;
 
         for (PGFact g : goals) {
-            g = localPropositionsMap.getOrDefault(g, g);
             // if (a.achieves.contains(g))
             if (a.getAction().adds(g.getFact())) {
                 // return 1;

@@ -4,7 +4,7 @@ My attempt to improve the speed and efficiency the AI planner: [JavaFF](https://
 
 # Usage
 
-The usage of the code is the same as [vanilla JavaFF](https://nms.kcl.ac.uk/planning/software/javaff.html). In other words, run javaff.JavaFF.main() with a domain and problem file. Be sure to add the contents of the /lib directory to the classpath.
+Run `./build.sh && runBenchmark.sh`
 
 # Citation
 

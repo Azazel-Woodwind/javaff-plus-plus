@@ -6,3 +6,9 @@ tree.txt
 test
 bin
 test.*
+*.pddl
+*.zip
+*.pdf
+*.ps
+logs
+domains

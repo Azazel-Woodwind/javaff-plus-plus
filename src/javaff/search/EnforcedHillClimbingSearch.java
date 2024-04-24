@@ -31,24 +31,32 @@ import javaff.JavaFF;
 import javaff.data.Action;
 import javaff.data.Fact;
 import javaff.data.Plan;
+import javaff.data.TotalOrderPlan;
+import javaff.data.strips.NullFact;
+import javaff.data.strips.RelaxedFFPlan;
+import javaff.planning.HelpfulFilter;
+import javaff.planning.NullFilter;
 import javaff.planning.STRIPSState;
 import javaff.planning.State;
 import javaff.planning.Filter;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
-
 import java.util.LinkedList;
 import java.util.Comparator;
 import java.math.BigDecimal;
+
+import java.util.Hashtable;
+import java.util.Iterator;
 
 public class EnforcedHillClimbingSearch extends Search {
     protected BigDecimal bestHValue;
 
     // cache the hash codes rather than the states for memory efficiency
-    protected Set<Integer> closed;
+    protected HashSet<Integer> closed;
     protected LinkedList<State> open;
 
     public EnforcedHillClimbingSearch(State s) {
@@ -81,17 +89,17 @@ public class EnforcedHillClimbingSearch extends Search {
     }
 
     public State search() {
+
         if (start.goalReached()) { // wishful thinking
             return start;
         }
-        // System.out.println("**" + start + "**");
 
         needToVisit(start); // dummy call (adds start to the list of 'closed'
-        // states so we don't visit it again
+                            // states so we don't visit it again
 
         open.add(start); // add it to the open list
         bestHValue = start.getHValue(); // and take its heuristic value as the
-        // best so far
+                                        // best so far
 
         javaff.JavaFF.infoOutput.print(bestHValue + " into depth ");
         int statesEvaluated = 1;
@@ -102,29 +110,7 @@ public class EnforcedHillClimbingSearch extends Search {
         int currentDepth = 1, prevDepth = 0;
         out: while (!open.isEmpty()) // whilst still states to consider
         {
-            int size = open.size();
-            // System.out.println("Open list size: " + size);
             State curr = open.pop();
-
-            // if (size == 26) {
-            // // for (State s : open) {
-            // // System.out.println(s);
-            // // }
-            // // System.out.println(open);
-            // String stateToFind = "at c6 l8, at c4 l5, at c3 l10, on c0, at c7 l12, at c5
-            // l10, at c1 l1, at-ferry l13, at c2 l12";
-            // while (!curr
-            // .toString().contains(stateToFind)) {
-            // curr = open.pop();
-            // }
-            // System.out.println("Successfully changed current state to " + curr);
-            // List<Action> applicable = filter.getActions(curr);
-            // System.out.println("Actions:");
-            // for (Action a : applicable) {
-            // System.out.println(a);
-            // }
-            // }
-
             closed.add(curr.hashCode());
             currentDepth = successorLayers.get(curr);
             if (currentDepth > maxDepth)
@@ -137,7 +123,6 @@ public class EnforcedHillClimbingSearch extends Search {
 
             List<Action> applicable = filter.getActions(curr);
             in: for (Action a : applicable) {
-                // System.out.println("\nEvaluating action " + a + " from state " + curr);
                 State succ = curr.getNextState(a);
 
                 if (this.closed.contains(succ.hashCode()) == true) {
@@ -147,31 +132,25 @@ public class EnforcedHillClimbingSearch extends Search {
 
                 BigDecimal succH = succ.getHValue();
                 // check we have no entered a dead-end
-                if (((STRIPSState) succ).getRelaxedPlan() == null) {
-                    // System.out.println("Found dead end");
+                if (((STRIPSState) succ).getRelaxedPlan() == null)
                     continue;
-                }
 
-                // now do online goal-ordering check -- this is used by FF to prevent
-                // deleting
+                // now do online goal-ordering check -- this is used by FF to prevent deleting
                 // goals early in the
                 // relaxed plan, which would then need negated again later on
                 boolean threatensGoal = this.isGoalThreatened(((STRIPSState) succ).getRelaxedPlan(), succ.goal);
                 if (threatensGoal) {
-                    // System.out.println("Threatens goal");
-                    // closed.add(succ); //The real FF says that this state should be "removed"
-                    // from the state-space -- we just skip it
+                    // closed.add(succ); //The real FF says that this state should be "removed" from
+                    // the state-space -- we just skip it
                     continue; // skip successor state
                 }
 
                 if (succ.goalReached()) { // if we've found a goal state -
-                    // return it as the
-                    // solution
+                                          // return it as the
+                                          // solution
                     JavaFF.infoOutput
-                            .println("\nEvaluated " + statesEvaluated + " states to a max depth of " +
-                                    maxDepth);
+                            .println("\nEvaluated " + statesEvaluated + " states to a max depth of " + maxDepth);
 
-                    // System.out.println("**" + succ + "**");
                     return succ;
                 } else if (succH.compareTo(bestHValue) < 0) {
                     // if we've found a state with a better heuristic
@@ -182,15 +161,11 @@ public class EnforcedHillClimbingSearch extends Search {
                     open.clear();
 
                     open.add(succ); // add it to the open list
-                    // System.out.println("**" + succ + "**");
-                    // System.out.println("\nAction: " + a);
                     successorLayers.clear();
                     successorLayers.put(succ, 1);
                     prevDepth = 0;
                     currentDepth = 1;
 
-                    // System.out.println("\nFOUND BETTER ACTION:" + a + "\nFROM STATE: " + curr
-                    // + "\nWHICH LEADS TO STATE: " + succ);
                     JavaFF.infoOutput.print("\n" + bestHValue + " into depth ");
 
                     continue out; // and skip looking at the other successors

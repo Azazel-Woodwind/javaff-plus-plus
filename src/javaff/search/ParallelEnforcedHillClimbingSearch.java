@@ -127,9 +127,7 @@ public class ParallelEnforcedHillClimbingSearch extends Search {
             if (end - start > 1 && extraAvailableProcessors > 0) {
                 split = true;
                 extraAvailableProcessors--;
-                // System.out.println("SPLITTING neighbours");
             } else {
-                // System.out.println("NOT splitting neighbours");
                 split = false;
             }
             lock.unlock();
@@ -286,7 +284,7 @@ public class ParallelEnforcedHillClimbingSearch extends Search {
                 }
 
                 if (out1.getFirst() == null || out2.getFirst() == null) {
-                    // System.out.println("found goal, aborting neighbour thread");
+                    // System.out.println("found goal somewhere else, aborting neighbour thread");
                     return new Pair<>(null, null);
                 }
 
@@ -342,7 +340,7 @@ public class ParallelEnforcedHillClimbingSearch extends Search {
                     }
 
                     List<Action> applicable = filter.getActions(state);
-                    Benchmarker.addToNeighbourCount(applicable.size());
+                    // Benchmarker.addToNeighbourCount(applicable.size());
                     // System.out.println("Applicable actions: " + applicable.size());
                     // applicable.parallelStream().forEach(a -> {
 
@@ -446,12 +444,10 @@ public class ParallelEnforcedHillClimbingSearch extends Search {
                 maxDepth = new AtomicInteger(1);
         ProcessLayerTask.found.set(false);
         try (ForkJoinPool pool = new ForkJoinPool()) {
-            while (!currentBag.isEmpty()) // whilst still states to consider
-            {
+            // whilst still states to consider
+            while (!currentBag.isEmpty()) {
                 extraAvailableProcessors = Runtime.getRuntime().availableProcessors() - 1;
-                // System.out.println("Extra available processors: " +
-                // extraAvailableProcessors);
-                Benchmarker.addToLayerCount(currentBag.size());
+                // Benchmarker.addToLayerCount(currentBag.size());
                 // System.out.println("Layer size: " + currentBag.size());
                 foundBetter = false;
                 ProcessLayerTask task = new ProcessLayerTask(currentBag, successorLayers,
