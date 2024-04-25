@@ -445,7 +445,7 @@ public class ParallelEnforcedHillClimbingSearch extends Search {
         ProcessLayerTask.found.set(false);
         try (ForkJoinPool pool = new ForkJoinPool()) {
             // whilst still states to consider
-            while (!currentBag.isEmpty()) {
+            while (currentBag != null && !currentBag.isEmpty()) {
                 extraAvailableProcessors = Runtime.getRuntime().availableProcessors() - 1;
                 // Benchmarker.addToLayerCount(currentBag.size());
                 // System.out.println("Layer size: " + currentBag.size());

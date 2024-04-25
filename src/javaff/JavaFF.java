@@ -58,6 +58,7 @@ import javaff.search.ParallelBestFirstSearch;
 import javaff.search.ParallelEnforcedHillClimbingSearch;
 import javaff.search.Search;
 import javaff.search.UnreachableGoalException;
+import utils.LogManager;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -137,6 +138,9 @@ public class JavaFF {
     public double timeTaken;
     public double planningEHCTime;
     public double planningBFSTime;
+    public double groundingTime;
+    public double reachabilityAnalysisTime;
+    public int finalPlanLength;
 
     protected File domainFile, problemFile;
 
@@ -421,6 +425,7 @@ public class JavaFF {
 
         if (this.isUseEHC()) {
             System.out.println("Running FF with EHC...");
+            LogManager.logImportant("Performing search using Enforced Hill Climbing...");
             startTime = System.nanoTime();
             goalState = this.performFFSearch(initialState, true);
             endTime = System.nanoTime();
@@ -428,17 +433,21 @@ public class JavaFF {
         }
 
         if (goalState != null) {
+            LogManager.logImportant("EHC Successful\n");
             System.out.println("Found EHC plan: ");
             plan = (TotalOrderPlan) goalState.getSolution();
         } else if (this.isUseBFS()) {
+            LogManager.logImportant("EHC failed in " + planningEHCTime + "sec");
             initialState = (State) originalInitState.clone();
             System.out.println("Running FF with BFS...");
+            LogManager.logImportant("Performing search using Best First Search...");
             startTime = System.nanoTime();
             goalState = this.performFFSearch(initialState, false);
             endTime = System.nanoTime();
             planningBFSTime = (endTime - startTime) / JavaFF.Nanos;
 
             if (goalState != null) {
+                LogManager.logImportant("BFS Successful\n");
                 plan = (TotalOrderPlan) goalState.getSolution();
 
                 System.out.println("Found BFS plan: ");
@@ -486,6 +495,7 @@ public class JavaFF {
                 tsp.print(planOutput);
                 System.out
                         .println("Final plan length is " + tsp.actions.size());
+                finalPlanLength = tsp.actions.size();
             }
 
             infoOutput.println("EHC Plan Time = " + planningEHCTime + "sec");
@@ -595,10 +605,16 @@ public class JavaFF {
         // filtering has to be done after decompiling the ADL because the RPG method
         // used only understands
         // STRIPS facts
-        System.out.println("Performing RPG reachability analysis...");
+        LogManager.logImportant("Performing RPG reachability analysis...");
         // State s = ground.getSTRIPSInitialState();
         // RPGManager.getInstance().initialiseRPGs(s);
+
+        long beforeFiltering = System.nanoTime();
         ground.filterReachableFacts();
+        long afterFiltering = System.nanoTime();
+        reachabilityAnalysisTime = (afterFiltering - beforeFiltering) / JavaFF.Nanos;
+        LogManager.logImportant("Reachability analysis complete in "
+                + reachabilityAnalysisTime + "sec\n");
 
         // Select the correct problem type to generate -- doing a STRIPS only domain
         // using a Temporal approach will
@@ -646,9 +662,12 @@ public class JavaFF {
                             + " supports the following\n"
                             + JavaFF.PDDLRequirementsSupported.toString());
 
-        System.out.println("Grounding...");
+        LogManager.logImportant("Grounding...");
+        long beforeGrounding = System.nanoTime();
         GroundProblem ground = unground.ground();
-        System.out.println("Grounding complete");
+        long afterGrounding = System.nanoTime();
+        groundingTime = (afterGrounding - beforeGrounding) / JavaFF.Nanos;
+        LogManager.logImportant("Grounding complete in " + groundingTime + "sec\n");
 
         return this.doPlan(ground);
     }

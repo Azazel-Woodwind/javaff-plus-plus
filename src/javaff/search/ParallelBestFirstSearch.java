@@ -26,6 +26,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import benchmarker.Benchmarker;
@@ -150,9 +151,12 @@ public class ParallelBestFirstSearch extends Search {
                             return s;
                         }
 
+                        System.out.println(s.getHValue());
+
                         List<Action> actions = filter.getActions(s);
                         Set<State> uniqueSuccessors = Collections.synchronizedSet(new HashSet<>());
                         AtomicBoolean goalFound = new AtomicBoolean(false);
+                        AtomicReference<State> goalState = new AtomicReference<>();
                         actions.parallelStream().forEach(action -> {
                             if (correctResultFound.get() || goalFound.get() || nodeCount > bound) {
                                 return;
@@ -166,6 +170,7 @@ public class ParallelBestFirstSearch extends Search {
                             if (succ.goalReached()) {
                                 goalFound.set(true);
                                 correctResultFound.set(true);
+                                goalState.set(succ);
                             }
 
                             STRIPSState stripsSucc = (STRIPSState) succ;
@@ -185,7 +190,7 @@ public class ParallelBestFirstSearch extends Search {
                         });
 
                         if (goalFound.get()) {
-                            return s;
+                            return goalState.get();
                         }
 
                         ++nodeCount;

@@ -14,3 +14,4 @@ done
 # # java -Xlog:gc*:file=gc.log -Xms512m -Xmx4g -cp "$classpath" benchmarker.Benchmarker
 
 java -Xmx4g -cp "$classpath" benchmarker.Benchmarker
+# java -Xmx4g -cp "$classpath" test.Test

@@ -171,8 +171,10 @@ public class STRIPSState extends State implements Cloneable {
         SS.factsNegated = falseFacts;
 
         if (this.RPG != null) {
-            // RelaxedPlanningGraph rpg = (RelaxedPlanningGraph) this.RPG.clone();
-            // SS.RPG = rpg;
+            if (!JavaFF.useParallel) {
+                RelaxedPlanningGraph rpg = (RelaxedPlanningGraph) this.RPG.clone();
+                SS.RPG = rpg;
+            }
 
             SS.RPCalculated = this.RPCalculated;
         }
@@ -202,7 +204,7 @@ public class STRIPSState extends State implements Cloneable {
     }
 
     public void claimRPG() {
-        System.out.println("CLAIMING RPG");
+        // System.out.println("CLAIMING RPG");
         if (RPG != null) {
             throw new RuntimeException("RPG already assigned to state");
         }
@@ -211,7 +213,7 @@ public class STRIPSState extends State implements Cloneable {
     }
 
     public void revokeRPG() {
-        System.out.println("REVOKING RPG");
+        // System.out.println("REVOKING RPG");
         RPGManager.getInstance().revokeRPG(RPG);
         // RPG = null;
     }

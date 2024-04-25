@@ -96,6 +96,7 @@ public class BestFirstSearch extends Search {
 
         while (!open.isEmpty()) {
             State s = removeNext();
+            System.out.println(s.getHValue());
             if (needToVisit(s)) {
                 ++nodeCount;
                 if (s.goalReached()) {

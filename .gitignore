@@ -12,3 +12,5 @@ test.*
 *.ps
 logs
 domains
+.vscode
+planningProblemNotes.txt

@@ -43,3 +43,326 @@ Average layer size: 2.110655737704918
 Max neighbour size: 46
 Min neighbour size: 1
 Average neighbour size: 12.540447504302927
+
+Domain 0: blocks-3op
+--------------------
+Problem: domains/blocks-3op/K-10.pfile14/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 16
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.131227799sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 0.313222602sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 0.277857245sec
+Performing search using Best First Search...
+
+
+
+Problem: domains/blocks-3op/L-11.pfile15/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 18
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.125067196sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 0.433985241sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 0.638529229sec
+Performing search using Best First Search...
+
+
+
+
+Problem: domains/blocks-3op/M-12.pfile18/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 18
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.23938253sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 1.341756313sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 1.37285874sec
+Performing search using Best First Search...
+
+
+Problem: domains/blocks-3op/M-12.pfile18/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 18
+__________
+PARALLEL: true
+Grounding...
+Grounding complete in 0.323050635sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 0.894651332sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 0.73628108sec
+Performing search using Best First Search...
+
+
+Domain 0: blocks-3op
+--------------------
+Problem: domains/blocks-3op/N-13.pfile16/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 21
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.212693758sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 0.684209122sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 0.534404033sec
+Performing search using Best First Search...
+
+
+
+Problem: domains/blocks-3op/O-14.pfile17/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 21
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.186005454sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 1.003381736sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 0.752395654sec
+Performing search using Best First Search...
+
+
+
+
+
+Problem: domains/blocks-3op/Q-16.pfile19/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 22
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.323737082sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 1.83628418sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 0.499469872sec
+Performing search using Best First Search...
+
+
+
+
+Problem: domains/blocks-3op/Q-16.pfile19/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 22
+__________
+PARALLEL: true
+Grounding...
+Grounding complete in 0.411360348sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 1.181829782sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 0.605271274sec
+Performing search using Best First Search...
+
+
+
+
+Problem: domains/blocks-3op/S-18.pfile20/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 22
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.491173621sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 1.461772335sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 1.790547796sec
+Performing search using Best First Search...
+
+
+
+
+Problem: domains/blocks-3op/S-18.pfile20/problem.pddl
+Domain 0: blocks-3op
+Lower bound: 22
+__________
+PARALLEL: true
+Grounding...
+Grounding complete in 0.490499019sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 1.761402459sec
+
+Performing search using Enforced Hill Climbing...
+EHC failed in 1.251611765sec
+Performing search using Best First Search...
+
+
+
+
+Problem: domains/logistics98/R-17.prob13/problem.pddl
+Domain 4: logistics98
+Lower bound: 66
+__________
+PARALLEL: false
+Grounding...
+
+
+
+Problem: domains/logistics98/U-20.prob14/problem.pddl
+Domain 4: logistics98
+Lower bound: 82
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 1.351603605sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 0.552544376sec
+
+Performing search using Enforced Hill Climbing...
+
+
+
+Problem: domains/mprime/T-19.prob20/problem.pddl
+Domain 7: mprime
+Lower bound: 7
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 5.707786451sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 21.10146709sec
+
+Performing search using Enforced Hill Climbing...
+
+
+
+
+Problem: domains/mystery/O-14.prob10/problem.pddl
+Domain 8: mystery
+Lower bound: 8
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.622761346sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 15.410143954sec
+
+Performing search using Enforced Hill Climbing...
+
+
+
+Problem: domains/mystery/O-14.prob10/problem.pddl
+Domain 8: mystery
+Lower bound: 8
+__________
+PARALLEL: true
+Grounding...
+Grounding complete in 1.111785849sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 10.840806425sec
+
+Performing search using Enforced Hill Climbing...
+
+
+
+
+Problem: domains/mystery/Q-16.prob06/problem.pddl
+Domain 8: mystery
+Lower bound: 11
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 0.229001366sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 0.777067888sec
+
+Performing search using Enforced Hill Climbing...
+
+
+
+
+Problem: domains/mystery/Q-16.prob06/problem.pddl
+Domain 8: mystery
+Lower bound: 11
+__________
+PARALLEL: true
+Grounding...
+Grounding complete in 0.444462402sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 0.821703005sec
+
+Performing search using Enforced Hill Climbing...
+
+
+
+Problem: domains/mystery/R-17.prob14/problem.pddl
+Domain 8: mystery
+Lower bound: 11
+__________
+PARALLEL: false
+Grounding...
+Grounding complete in 1.142057525sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 24.600378968sec
+
+Performing search using Enforced Hill Climbing...
+
+
+
+
+Domain 8: mystery
+--------------------
+Problem: domains/mystery/R-17.prob14/problem.pddl
+Domain 8: mystery
+Lower bound: 11
+__________
+PARALLEL: true
+Grounding...
+Grounding complete in 1.163394116sec
+
+Performing RPG reachability analysis...
+Reachability analysis complete in 19.355583743sec
+
+Performing search using Enforced Hill Climbing..
+
+miconic hard - parallel very clear winner, only EHC, also better costs
+tsp hard - serial wins as very easy, only EHC, same costs
+logistics hard - both never ground
+gripper medium - ehc always fails, only bfs, parallel still better
+hanoi - some easy quickly solve but rest ehc instantly fails and bfs stays stuck at same heuristic
+blocks - instantly grounds, ehc instantly fails, bfs forever, takes too long to calculate heuristic
+mystery medium - EHC cannot find solution - goes very deep and cant find better heuristic
+
+ehc doesnt always fail the same problem
+grounding and reachability bottleneck
